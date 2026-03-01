@@ -39,13 +39,14 @@ class LlamaChunker:
     def __init__(self):
         """Initialize LlamaIndex parsers"""
 
-        # Code parser (tree-sitter based, AST-aware)
-        self.code_splitter = CodeSplitter(
-            language="python",  # Updated per file
-            chunk_lines=50,
-            chunk_lines_overlap=15,
-            max_chars=2000
-        )
+        # Keep one splitter per language. Mutating CodeSplitter.language is not enough
+        # because the underlying parser is bound at initialization.
+        self._code_splitter_cache: Dict[str, CodeSplitter] = {}
+        self._code_splitter_defaults = {
+            "chunk_lines": 50,
+            "chunk_lines_overlap": 15,
+            "max_chars": 2000,
+        }
 
         # Markdown parser (header-aware)
         self.markdown_parser = MarkdownNodeParser()
@@ -215,8 +216,7 @@ class LlamaChunker:
         """
         if ext in self.code_exts and language:
             # Code-aware parsing (respects AST structure)
-            self.code_splitter.language = language
-            return self.code_splitter.get_nodes_from_documents([document])
+            return self._get_code_splitter(language).get_nodes_from_documents([document])
 
         elif ext in self.markdown_exts:
             # Markdown-aware parsing (respects headers)
@@ -243,6 +243,19 @@ class LlamaChunker:
         else:
             # Generic sentence-based parsing
             return self.sentence_splitter.get_nodes_from_documents([document])
+
+    def _get_code_splitter(self, language: str) -> CodeSplitter:
+        """Return a cached CodeSplitter instance for a specific language."""
+        splitter = self._code_splitter_cache.get(language)
+        if splitter is None:
+            splitter = CodeSplitter(
+                language=language,
+                chunk_lines=self._code_splitter_defaults["chunk_lines"],
+                chunk_lines_overlap=self._code_splitter_defaults["chunk_lines_overlap"],
+                max_chars=self._code_splitter_defaults["max_chars"],
+            )
+            self._code_splitter_cache[language] = splitter
+        return splitter
 
     def _classify_chunk_type(self, content: str, language: str) -> str:
         """
