@@ -58,7 +58,7 @@ GIT_EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"  # Git's empty tree 
 EMBEDDING_MODEL = "voyage-code-3"  # SOTA code embedding model
 DIMENSION = 1024  # voyage-code-3 dimension
 METRIC = "cosine"
-BATCH_SIZE = 10
+PINECONE_UPSERT_BATCH_SIZE = 32
 EMBEDDING_BATCH_SIZE = 32
 
 # Extensions we should not attempt to parse/chunk as text. We index them as a single metadata summary.
@@ -1118,8 +1118,12 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
             chunks = process_file(filepath, status, repo_name, commit_sha)
 
             if chunks:
-                for i in tqdm(range(0, len(chunks), BATCH_SIZE), desc=f"Upserting {filepath}", leave=False):
-                    batch = chunks[i:i + BATCH_SIZE]
+                for i in tqdm(
+                    range(0, len(chunks), PINECONE_UPSERT_BATCH_SIZE),
+                    desc=f"Upserting {filepath}",
+                    leave=False,
+                ):
+                    batch = chunks[i:i + PINECONE_UPSERT_BATCH_SIZE]
                     try:
                         pinecone_started = time.perf_counter()
                         upserted_count = safe_upsert_batch(batch, repo_name)
