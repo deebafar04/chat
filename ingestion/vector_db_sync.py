@@ -232,6 +232,78 @@ First 20 lines preview:
         return [f"Error reading CSV {filepath}: {e}"], True
 
 
+def chunk_topojson_summary(filepath: Path):
+    """Build a compact, human-readable TopoJSON summary chunk."""
+    path = Path(filepath)
+    try:
+        stat = path.stat()
+        size_mb = stat.st_size / (1024 * 1024)
+    except Exception as e:
+        raise RuntimeError(f"Failed to stat TopoJSON file {filepath}: {e}")
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8", errors="strict"))
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse TopoJSON file {filepath}: {e}")
+
+    topo_type = data.get("type")
+    if topo_type != "Topology":
+        raise RuntimeError(f"Invalid TopoJSON type for {filepath}: {topo_type!r}")
+
+    objects = data.get("objects")
+    if not isinstance(objects, dict) or not objects:
+        raise RuntimeError(f"Invalid TopoJSON objects for {filepath}")
+
+    object_names = list(objects.keys())
+    geometry_counts: dict = {}
+    total_geometries = 0
+    sample_ids: List[str] = []
+
+    for obj in objects.values():
+        if not isinstance(obj, dict):
+            continue
+        geometries = obj.get("geometries")
+        if not isinstance(geometries, list):
+            continue
+        total_geometries += len(geometries)
+        for geom in geometries:
+            if not isinstance(geom, dict):
+                continue
+            geom_type = str(geom.get("type", "Unknown"))
+            geometry_counts[geom_type] = int(geometry_counts.get(geom_type, 0)) + 1
+            geom_id = geom.get("id")
+            if geom_id is not None and len(sample_ids) < 12:
+                sample_ids.append(str(geom_id))
+
+    arcs = data.get("arcs")
+    arc_count = len(arcs) if isinstance(arcs, list) else 0
+    has_transform = isinstance(data.get("transform"), dict)
+
+    object_preview = ", ".join(object_names[:8])
+    if len(object_names) > 8:
+        object_preview += ", ..."
+
+    type_preview = ", ".join([f"{k}={v}" for k, v in sorted(geometry_counts.items())])
+    if not type_preview:
+        type_preview = "none"
+
+    id_preview = ", ".join(sample_ids) if sample_ids else "none"
+
+    summary = f"""TOPOJSON file: {path.name}
+Path: {filepath}
+Size: {size_mb:.2f} MB
+Type: topojson
+Topology: {topo_type}
+Objects: {object_preview}
+Geometry count: {total_geometries}
+Geometry types: {type_preview}
+Arc count: {arc_count}
+Has transform: {"yes" if has_transform else "no"}
+Sample IDs: {id_preview}
+"""
+    return re_chunk_if_oversize([summary]), True
+
+
 def chunk_as_summary(filepath: Path):
     path = Path(filepath)
     file_type = detect_file_type(str(filepath))
@@ -267,6 +339,11 @@ def dispatch_chunking(filepath: Path):
     # Lockfiles and similar artifacts: index as a single summary chunk.
     if path.name.lower() in SUMMARY_ONLY_BASENAMES:
         chunks, _ = chunk_as_summary(path)
+        return chunks, True, "summary"
+
+    # TopoJSON map datasets are large geometry payloads; index a compact structural preview.
+    if path.name.lower().endswith(".topo.json"):
+        chunks, _ = chunk_topojson_summary(path)
         return chunks, True, "summary"
 
     # Binary-ish assets: index a single summary chunk instead of trying to parse/chunk file bytes as text.
