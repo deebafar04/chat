@@ -6,8 +6,8 @@
 
 -- Google Models
 INSERT INTO model_config (model_id, name, description, provider, is_active, is_default, thinking_enabled, input_pricing_per_million_tokens, output_pricing_per_million_tokens, metadata) VALUES
-('gemini-2.0-flash', 'Gemini 2.0 Flash', 'Fast, efficient model for most tasks', 'google', true, true, true, 0.0750, 0.3000, '{"contextWindow": 1048576, "maxOutputTokens": 8192}'::jsonb),
-('gemini-2.5-flash', 'Gemini 2.5 Flash', 'Enhanced flash model with better performance', 'google', true, false, true, 0.0750, 0.3000, '{"contextWindow": 1048576, "maxOutputTokens": 8192}'::jsonb),
+('gemini-2.0-flash', 'Gemini 2.0 Flash', 'Fast, efficient model for most tasks', 'google', true, false, true, 0.0750, 0.3000, '{"contextWindow": 1048576, "maxOutputTokens": 8192}'::jsonb),
+('gemini-2.5-flash', 'Gemini 2.5 Flash', 'Enhanced flash model with better performance', 'google', true, true, true, 0.0750, 0.3000, '{"contextWindow": 1048576, "maxOutputTokens": 8192}'::jsonb),
 ('gemini-2.5-pro', 'Gemini 2.5 Pro', 'Most capable model for complex tasks', 'google', true, false, true, 1.2500, 5.0000, '{"contextWindow": 2097152, "maxOutputTokens": 8192}'::jsonb),
 ('gemma-3', 'Gemma 3', 'Open source model for basic tasks', 'google', false, false, false, 0.0500, 0.2000, '{"contextWindow": 8192, "maxOutputTokens": 2048}'::jsonb)
 
