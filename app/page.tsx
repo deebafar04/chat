@@ -325,7 +325,7 @@ export default async function LandingPage() {
             </div>
           </div>
           <div className="border-t pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 AI Chatbot. All rights reserved.</p>
+            <p>&copy; 2026 DreamStudio Earth &ndash; CodeChat RAG addition to [Vercel Starter](https://model.earth/chat/).</p>
           </div>
         </div>
       </footer>

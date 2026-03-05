@@ -306,7 +306,7 @@ export default function AgentsPage() {
             {/* Footer */}
             <footer className="border-t px-4 py-8">
                 <div className="container mx-auto text-center text-muted-foreground">
-                    <p>&copy; 2024 AI Chatbot. All rights reserved.</p>
+                    <p>&copy; 2026 DreamStudio Earth &ndash; CodeChat RAG addition to [Vercel Starter](https://model.earth/chat/).</p>
                 </div>
             </footer>
         </div>
