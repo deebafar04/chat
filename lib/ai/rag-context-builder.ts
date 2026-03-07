@@ -357,8 +357,22 @@ function formatRagContext(
     return "";
   }
 
+  // Only add response instructions when context snippets are present
+  lines.push("---");
   lines.push("Cite file paths and line ranges when you rely on this context.");
-  return `\n\n${lines.join("\n")}`;
+  lines.push(
+    "Keep your response concise: use bullet points or short paragraphs and prioritize key facts."
+  );
+
+  const assembled = `\n\n${lines.join("\n")}`;
+
+  // Safeguard: cap final RAG context to prevent excessive prompt size
+  const RAG_CONTEXT_HARD_CAP = 10_000;
+  if (assembled.length > RAG_CONTEXT_HARD_CAP) {
+    return assembled.slice(0, RAG_CONTEXT_HARD_CAP) + "\n...[context truncated]";
+  }
+
+  return assembled;
 }
 
 export async function buildRagContext(
