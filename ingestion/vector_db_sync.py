@@ -1204,6 +1204,7 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
             else:
                 raise RuntimeError(f"Failed to wipe namespace: {e}")
 
+    total_files = len(files_to_process)
     file_stats = {"processed": 0, "errors": 0, "skipped": 0}
     failures: List[dict] = []
     deleted_files = 0
@@ -1217,6 +1218,7 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
     upsert_queue: List[dict] = []
     embedding_queue_tokens = 0
     upsert_queue_bytes = 0
+    chunking_progress = ProgressReporter(desc="Chunking files", unit="file")
     embedding_progress = ProgressReporter(desc="Embedding chunks", unit="chunk")
     upsert_progress = ProgressReporter(desc="Upserting chunks", unit="chunk")
 
@@ -1443,7 +1445,7 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
 
     try:
         # Process files
-        for status, filepath in files_to_process:
+        for file_index, (status, filepath) in enumerate(files_to_process, start=1):
             file_started = time.perf_counter()
             embed_before = float(timing_stats["embed_seconds"])
             pinecone_before = float(timing_stats["pinecone_seconds"])
@@ -1490,7 +1492,14 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
                     timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
                     deleted_files += 1
 
+                logger.info(
+                    "[progress] Chunking file index=%d/%d path=%s",
+                    file_index,
+                    total_files,
+                    filepath,
+                )
                 chunk_entries = prepare_file_chunks(filepath, status, repo_name, commit_sha)
+                chunking_progress.update(1)
                 next_file_id += 1
                 queued_file_id = next_file_id
                 file_states[queued_file_id] = {
@@ -1553,6 +1562,7 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
         _flush_embedding_queue(force=True)
         _flush_upsert_queue(force=True)
     finally:
+        chunking_progress.close()
         embedding_progress.close()
         upsert_progress.close()
 
