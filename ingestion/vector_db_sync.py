@@ -480,7 +480,7 @@ def get_accurate_line_range(chunk: str, full_text: str) -> str:
         return "L1-L1"
 
 
-def process_file(filepath: str, status: str, repo_name: str, commit_sha: str):
+def prepare_file_chunks(filepath: str, status: str, repo_name: str, commit_sha: str):
     try:
         if not Path(filepath).exists():
             logger.warning(f"File not found: {filepath}")
@@ -495,9 +495,6 @@ def process_file(filepath: str, status: str, repo_name: str, commit_sha: str):
                 full_text = Path(filepath).read_text(encoding="utf-8", errors="ignore")
             except Exception as e:
                 logger.warning(f"Could not read full text for {filepath}: {e}")
-
-        embeddable_entry_indexes: List[int] = []
-        embeddable_texts: List[str] = []
 
         for i, chunk in enumerate(chunks):
             if not chunk or not chunk.strip():
@@ -527,21 +524,6 @@ def process_file(filepath: str, status: str, repo_name: str, commit_sha: str):
                 }
             }
             chunk_entries.append(chunk_entry)
-            if should_embed and token_count <= MAX_TOKENS:
-                embeddable_entry_indexes.append(len(chunk_entries) - 1)
-                embeddable_texts.append(chunk)
-
-        for i in tqdm(
-            range(0, len(embeddable_texts), EMBEDDING_BATCH_SIZE),
-            desc=f"Embedding {filepath}",
-            leave=False,
-        ):
-            text_batch = embeddable_texts[i:i + EMBEDDING_BATCH_SIZE]
-            embedding_batch = get_embeddings(text_batch)
-            for j, embedding in enumerate(embedding_batch):
-                entry_index = embeddable_entry_indexes[i + j]
-                chunk_entries[entry_index]["values"] = embedding
-                chunk_entries[entry_index]["metadata"]["embedded"] = True
 
         return chunk_entries
 
@@ -573,6 +555,13 @@ def safe_upsert_batch(batch: List[dict], repo_name: str) -> int:
             raise RuntimeError(f"Attempted to upsert empty embedding: {md.get('file_path')}")
     index.upsert(vectors=batch, namespace=DEFAULT_NAMESPACE)
     return len(batch)
+
+
+def group_queue_items_by_file(queue_items: List[dict]) -> dict:
+    grouped: dict = {}
+    for item in queue_items:
+        grouped.setdefault(item["file_id"], []).append(item)
+    return grouped
 
 
 def detect_github_commit_range() -> Tuple[str, str]:
@@ -1071,103 +1060,273 @@ def run_sync(files_to_process: List[Tuple[str, str]], errors_out: str, repo_root
     total_upserted = 0
     warned_skipped_repos = set()
     skipped_repo_counts = {}
+    file_states: dict = {}
+    next_file_id = 0
+    embedding_queue: List[dict] = []
+    upsert_queue: List[dict] = []
+    embedding_progress = tqdm(desc="Embedding chunks", unit="chunk", leave=False)
+    upsert_progress = tqdm(desc="Upserting chunks", unit="chunk", leave=False)
 
-    # Process files
-    for status, filepath in files_to_process:
-        file_started = time.perf_counter()
-        embed_before = float(timing_stats["embed_seconds"])
-        pinecone_before = float(timing_stats["pinecone_seconds"])
+    def _log_direct_file_timing(filepath: str, file_started: float, embed_before: float, pinecone_before: float) -> None:
+        total_elapsed = time.perf_counter() - file_started
+        embed_elapsed = max(0.0, float(timing_stats["embed_seconds"]) - embed_before)
+        pinecone_elapsed = max(0.0, float(timing_stats["pinecone_seconds"]) - pinecone_before)
+        other_elapsed = max(0.0, total_elapsed - embed_elapsed - pinecone_elapsed)
+        if total_elapsed > 0:
+            embed_pct = (embed_elapsed / total_elapsed) * 100.0
+            pinecone_pct = (pinecone_elapsed / total_elapsed) * 100.0
+            other_pct = (other_elapsed / total_elapsed) * 100.0
+        else:
+            embed_pct = 0.0
+            pinecone_pct = 0.0
+            other_pct = 0.0
+        log_timing(
+            f"file={filepath} embedding={embed_elapsed:.3f}s ({embed_pct:.1f}%) "
+            f"pinecone={pinecone_elapsed:.3f}s ({pinecone_pct:.1f}%) "
+            f"other={other_elapsed:.3f}s ({other_pct:.1f}%) total_time={total_elapsed:.3f}s"
+        )
 
-        def _log_file_timing() -> None:
-            total_elapsed = time.perf_counter() - file_started
-            embed_elapsed = max(0.0, float(timing_stats["embed_seconds"]) - embed_before)
-            pinecone_elapsed = max(0.0, float(timing_stats["pinecone_seconds"]) - pinecone_before)
-            other_elapsed = max(0.0, total_elapsed - embed_elapsed - pinecone_elapsed)
-            if total_elapsed > 0:
-                embed_pct = (embed_elapsed / total_elapsed) * 100.0
-                pinecone_pct = (pinecone_elapsed / total_elapsed) * 100.0
-                other_pct = (other_elapsed / total_elapsed) * 100.0
-            else:
-                embed_pct = 0.0
-                pinecone_pct = 0.0
-                other_pct = 0.0
-            log_timing(
-                f"file={filepath} embedding={embed_elapsed:.3f}s ({embed_pct:.1f}%) "
-                f"pinecone={pinecone_elapsed:.3f}s ({pinecone_pct:.1f}%) "
-                f"other={other_elapsed:.3f}s ({other_pct:.1f}%) total_time={total_elapsed:.3f}s"
-            )
+    def _log_state_file_timing(file_state: dict) -> None:
+        total_elapsed = time.perf_counter() - file_state["started"]
+        embed_elapsed = float(file_state["embed_seconds"])
+        pinecone_elapsed = float(file_state["pinecone_seconds"])
+        other_elapsed = max(0.0, total_elapsed - embed_elapsed - pinecone_elapsed)
+        if total_elapsed > 0:
+            embed_pct = (embed_elapsed / total_elapsed) * 100.0
+            pinecone_pct = (pinecone_elapsed / total_elapsed) * 100.0
+            other_pct = (other_elapsed / total_elapsed) * 100.0
+        else:
+            embed_pct = 0.0
+            pinecone_pct = 0.0
+            other_pct = 0.0
+        log_timing(
+            f"file={file_state['file_path']} embedding={embed_elapsed:.3f}s ({embed_pct:.1f}%) "
+            f"pinecone={pinecone_elapsed:.3f}s ({pinecone_pct:.1f}%) "
+            f"other={other_elapsed:.3f}s ({other_pct:.1f}%) total_time={total_elapsed:.3f}s"
+        )
 
-        try:
-            path = Path(filepath)
-            repo_folder = top_level_repo_folder(filepath)
-            if repo_folder in SKIPPED_REPO_REASONS:
-                file_stats["skipped"] += 1
-                skipped_repo_counts[repo_folder] = int(skipped_repo_counts.get(repo_folder, 0)) + 1
-                if repo_folder not in warned_skipped_repos:
-                    warned_skipped_repos.add(repo_folder)
-                    logger.warning(
-                        "Skipping files under repo '%s' during VectorDB sync because it %s.",
-                        repo_folder,
-                        SKIPPED_REPO_REASONS[repo_folder],
-                    )
+    def _finalize_file_success(file_id: int) -> None:
+        state = file_states[file_id]
+        if state["finalized"]:
+            return
+        state["finalized"] = True
+        file_stats["processed"] += 1
+        _log_state_file_timing(state)
+
+    def _finalize_file_error(file_id: int, operation: str, message: str) -> None:
+        state = file_states[file_id]
+        if state["finalized"]:
+            return
+        state["finalized"] = True
+        state["failed"] = True
+        file_stats["errors"] += 1
+        failures.append(
+            {
+                "file_path": state["file_path"],
+                "operation": operation,
+                "message": message,
+                "status": state["status"],
+            }
+        )
+        append_error(errors_out, state["file_path"], operation, message, status=state["status"])
+        _log_state_file_timing(state)
+
+    def _drop_file_items(queue: List[dict], file_ids: set) -> None:
+        if not file_ids:
+            return
+        queue[:] = [item for item in queue if item["file_id"] not in file_ids]
+
+    def _note_queue_elapsed(queue_items: List[dict], timing_field: str, elapsed: float) -> None:
+        if not queue_items or elapsed <= 0:
+            return
+        per_item = elapsed / len(queue_items)
+        for item in queue_items:
+            state = file_states.get(item["file_id"])
+            if not state or state["finalized"]:
                 continue
+            state[timing_field] += per_item
 
-            if path.exists() and path.is_dir():
-                # Submodule entries can appear as paths in some diff modes; skip directories to avoid false failures.
-                file_stats["skipped"] += 1
-                append_error(errors_out, filepath, "skip-dir", "Path is a directory; skipping", status=status)
-                _log_file_timing()
+    def _record_upsert_success(queue_items: List[dict], elapsed: float) -> None:
+        nonlocal total_upserted
+        if not queue_items:
+            return
+        _note_queue_elapsed(queue_items, "pinecone_seconds", elapsed)
+        total_upserted += len(queue_items)
+        upsert_progress.update(len(queue_items))
+        for item in queue_items:
+            uid = item["entry"].get("id")
+            if isinstance(uid, str):
+                upserted_ids.append(uid)
+            state = file_states.get(item["file_id"])
+            if not state or state["finalized"]:
                 continue
+            state["completed_chunks"] += 1
+            if state["completed_chunks"] >= state["expected_chunks"]:
+                _finalize_file_success(item["file_id"])
 
-            if status == "D":
-                pinecone_started = time.perf_counter()
-                safe_delete_vectors(filepath, repo_name)
-                timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
-                deleted_files += 1
-                _log_file_timing()
-                continue
-
-            if not path.exists():
-                file_stats["skipped"] += 1
-                raise FileNotFoundError(f"File marked as {status} but not found: {filepath}")
-
-            if status in ("A", "M") and not wipe_first:
-                # Keep idempotency when re-chunking changes chunk counts/ids.
-                pinecone_started = time.perf_counter()
-                safe_delete_vectors(filepath, repo_name)
-                timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
-                deleted_files += 1
-
-            chunks = process_file(filepath, status, repo_name, commit_sha)
-
-            if chunks:
-                for i in tqdm(
-                    range(0, len(chunks), PINECONE_UPSERT_BATCH_SIZE),
-                    desc=f"Upserting {filepath}",
-                    leave=False,
-                ):
-                    batch = chunks[i:i + PINECONE_UPSERT_BATCH_SIZE]
+    def _flush_embedding_queue(force: bool = False) -> None:
+        while embedding_queue and (force or len(embedding_queue) >= EMBEDDING_BATCH_SIZE):
+            batch_size = min(len(embedding_queue), EMBEDDING_BATCH_SIZE)
+            batch_items = embedding_queue[:batch_size]
+            del embedding_queue[:batch_size]
+            text_batch = [item["entry"]["metadata"]["content"] for item in batch_items]
+            try:
+                started = time.perf_counter()
+                embedding_batch = get_embeddings(text_batch)
+                elapsed = time.perf_counter() - started
+                _note_queue_elapsed(batch_items, "embed_seconds", elapsed)
+                embedding_progress.update(len(batch_items))
+                for item, embedding in zip(batch_items, embedding_batch):
+                    item["entry"]["values"] = embedding
+                    item["entry"]["metadata"]["embedded"] = True
+                upsert_queue.extend(batch_items)
+            except Exception:
+                failed_file_ids = set()
+                for file_id, file_items in group_queue_items_by_file(batch_items).items():
                     try:
-                        pinecone_started = time.perf_counter()
-                        upserted_count = safe_upsert_batch(batch, repo_name)
-                        timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
-                        total_upserted += upserted_count
-                        for it in batch:
-                            uid = it.get('id')
-                            if isinstance(uid, str):
-                                upserted_ids.append(uid)
-                    except Exception as e:
-                        file_stats["errors"] += 1
-                        failures.append({"file_path": filepath, "operation": "upsert", "message": str(e), "status": status})
-                        append_error(errors_out, filepath, "upsert", str(e), status=status)
+                        started = time.perf_counter()
+                        embedding_batch = get_embeddings([item["entry"]["metadata"]["content"] for item in file_items])
+                        elapsed = time.perf_counter() - started
+                        _note_queue_elapsed(file_items, "embed_seconds", elapsed)
+                        embedding_progress.update(len(file_items))
+                        for item, embedding in zip(file_items, embedding_batch):
+                            item["entry"]["values"] = embedding
+                            item["entry"]["metadata"]["embedded"] = True
+                        upsert_queue.extend(file_items)
+                    except Exception as file_error:
+                        failed_file_ids.add(file_id)
+                        _finalize_file_error(file_id, "embed", str(file_error))
+                _drop_file_items(embedding_queue, failed_file_ids)
+                _drop_file_items(upsert_queue, failed_file_ids)
 
-            file_stats["processed"] += 1
-            _log_file_timing()
-        except Exception as e:
-            file_stats["errors"] += 1
-            failures.append({"file_path": filepath, "operation": "process", "message": str(e), "status": status})
-            append_error(errors_out, filepath, "process", str(e), status=status)
-            _log_file_timing()
+    def _flush_upsert_queue(force: bool = False) -> None:
+        while upsert_queue and (force or len(upsert_queue) >= PINECONE_UPSERT_BATCH_SIZE):
+            batch_size = min(len(upsert_queue), PINECONE_UPSERT_BATCH_SIZE)
+            batch_items = upsert_queue[:batch_size]
+            del upsert_queue[:batch_size]
+            try:
+                started = time.perf_counter()
+                safe_upsert_batch([item["entry"] for item in batch_items], repo_name)
+                elapsed = time.perf_counter() - started
+                timing_stats["pinecone_seconds"] += elapsed
+                _record_upsert_success(batch_items, elapsed)
+            except Exception:
+                failed_file_ids = set()
+                for file_id, file_items in group_queue_items_by_file(batch_items).items():
+                    try:
+                        started = time.perf_counter()
+                        safe_upsert_batch([item["entry"] for item in file_items], repo_name)
+                        elapsed = time.perf_counter() - started
+                        timing_stats["pinecone_seconds"] += elapsed
+                        _record_upsert_success(file_items, elapsed)
+                    except Exception as file_error:
+                        failed_file_ids.add(file_id)
+                        _finalize_file_error(file_id, "upsert", str(file_error))
+                _drop_file_items(upsert_queue, failed_file_ids)
+
+    try:
+        # Process files
+        for status, filepath in files_to_process:
+            file_started = time.perf_counter()
+            embed_before = float(timing_stats["embed_seconds"])
+            pinecone_before = float(timing_stats["pinecone_seconds"])
+            queued_file_id: Optional[int] = None
+
+            try:
+                path = Path(filepath)
+                repo_folder = top_level_repo_folder(filepath)
+                if repo_folder in SKIPPED_REPO_REASONS:
+                    file_stats["skipped"] += 1
+                    skipped_repo_counts[repo_folder] = int(skipped_repo_counts.get(repo_folder, 0)) + 1
+                    if repo_folder not in warned_skipped_repos:
+                        warned_skipped_repos.add(repo_folder)
+                        logger.warning(
+                            "Skipping files under repo '%s' during VectorDB sync because it %s.",
+                            repo_folder,
+                            SKIPPED_REPO_REASONS[repo_folder],
+                        )
+                    continue
+
+                if path.exists() and path.is_dir():
+                    # Submodule entries can appear as paths in some diff modes; skip directories to avoid false failures.
+                    file_stats["skipped"] += 1
+                    append_error(errors_out, filepath, "skip-dir", "Path is a directory; skipping", status=status)
+                    _log_direct_file_timing(filepath, file_started, embed_before, pinecone_before)
+                    continue
+
+                if status == "D":
+                    pinecone_started = time.perf_counter()
+                    safe_delete_vectors(filepath, repo_name)
+                    timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
+                    deleted_files += 1
+                    _log_direct_file_timing(filepath, file_started, embed_before, pinecone_before)
+                    continue
+
+                if not path.exists():
+                    file_stats["skipped"] += 1
+                    raise FileNotFoundError(f"File marked as {status} but not found: {filepath}")
+
+                if status in ("A", "M") and not wipe_first:
+                    # Keep idempotency when re-chunking changes chunk counts/ids.
+                    pinecone_started = time.perf_counter()
+                    safe_delete_vectors(filepath, repo_name)
+                    timing_stats["pinecone_seconds"] += (time.perf_counter() - pinecone_started)
+                    deleted_files += 1
+
+                chunk_entries = prepare_file_chunks(filepath, status, repo_name, commit_sha)
+                next_file_id += 1
+                queued_file_id = next_file_id
+                file_states[queued_file_id] = {
+                    "file_path": filepath,
+                    "status": status,
+                    "started": file_started,
+                    "embed_seconds": 0.0,
+                    "pinecone_seconds": 0.0,
+                    "expected_chunks": len(chunk_entries),
+                    "completed_chunks": 0,
+                    "finalized": False,
+                    "failed": False,
+                }
+
+                if not chunk_entries:
+                    _finalize_file_success(queued_file_id)
+                    continue
+
+                for entry in chunk_entries:
+                    metadata = entry.get("metadata", {})
+                    queue_item = {
+                        "file_id": queued_file_id,
+                        "file_path": filepath,
+                        "status": status,
+                        "entry": entry,
+                    }
+                    if bool(metadata.get("should_embed")) and int(metadata.get("token_count", 0)) <= MAX_TOKENS:
+                        embedding_queue.append(queue_item)
+                    else:
+                        if metadata.get("chunk_type") == "content":
+                            raise RuntimeError(
+                                f"Content chunk exceeds embedding token limit after re-chunking: {filepath}"
+                            )
+                        upsert_queue.append(queue_item)
+
+                _flush_embedding_queue()
+                _flush_upsert_queue()
+            except Exception as e:
+                if queued_file_id is not None and queued_file_id in file_states:
+                    _finalize_file_error(queued_file_id, "process", str(e))
+                    _drop_file_items(embedding_queue, {queued_file_id})
+                    _drop_file_items(upsert_queue, {queued_file_id})
+                else:
+                    file_stats["errors"] += 1
+                    failures.append({"file_path": filepath, "operation": "process", "message": str(e), "status": status})
+                    append_error(errors_out, filepath, "process", str(e), status=status)
+                    _log_direct_file_timing(filepath, file_started, embed_before, pinecone_before)
+
+        _flush_embedding_queue(force=True)
+        _flush_upsert_queue(force=True)
+    finally:
+        embedding_progress.close()
+        upsert_progress.close()
 
     logger.info(f"\nSync Complete for {repo_name}:")
     logger.info(f"  - Namespace: '{DEFAULT_NAMESPACE}' (default)" if DEFAULT_NAMESPACE == "" else f"  - Namespace: '{DEFAULT_NAMESPACE}'")
