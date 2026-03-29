@@ -43,7 +43,7 @@ export function DebugApiKeyTest() {
         },
         body: JSON.stringify({
           googleApiKey: retrievedKey,
-          selectedChatModel: "gemini-2.0-flash",
+          selectedChatModel: "gemini-2.5-flash",
           test: true,
         }),
       });

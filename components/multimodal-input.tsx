@@ -33,7 +33,7 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "./elements/prompt-input";
-import { GitHubRepoModal } from "./github-repo-modal";
+import { GitHubRepoModal, ResourceAreaSelector } from "@/lib/github-components";
 import { ArrowUpIcon, StopIcon } from "./icons";
 import { ModelSelector } from "./model-selector";
 import { PreviewAttachment } from "./preview-attachment";
@@ -59,6 +59,10 @@ function PureMultimodalInput({
   onModelChange,
   usage,
   githubPAT,
+  ragSelectedRepos,
+  onRagSelectedReposChange,
+  availableRepos,
+  availableReposLoading,
 }: {
   chatId: string;
   input: string;
@@ -76,6 +80,10 @@ function PureMultimodalInput({
   onModelChange?: (modelId: string) => void;
   usage?: AppUsage;
   githubPAT?: string;
+  ragSelectedRepos?: string[];
+  onRagSelectedReposChange?: (repos: string[]) => void;
+  availableRepos?: string[];
+  availableReposLoading?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -722,6 +730,15 @@ function PureMultimodalInput({
               </Button>
             )}
 
+            {availableRepos && onRagSelectedReposChange && (
+              <ResourceAreaSelector
+                availableRepos={availableRepos}
+                isLoading={availableReposLoading}
+                onRagSelectedReposChange={onRagSelectedReposChange}
+                ragSelectedRepos={ragSelectedRepos ?? []}
+              />
+            )}
+
             <ModelSelector
               adminConfig={adminConfig || undefined}
               error={configError}
@@ -789,6 +806,15 @@ export const MultimodalInput = memo(
       return false;
     }
     if (prevProps.githubPAT !== nextProps.githubPAT) {
+      return false;
+    }
+    if (!equal(prevProps.ragSelectedRepos, nextProps.ragSelectedRepos)) {
+      return false;
+    }
+    if (!equal(prevProps.availableRepos, nextProps.availableRepos)) {
+      return false;
+    }
+    if (prevProps.availableReposLoading !== nextProps.availableReposLoading) {
       return false;
     }
 

@@ -156,11 +156,21 @@ export class ChatAgentResolver {
       // Find default model
       const defaultModel = availableModels.find((m) => m.isDefault);
 
+      // Default system prompt with structured response guidelines
+      const defaultSystemPrompt = [
+        "You are a helpful AI assistant.",
+        "",
+        "Response Guidelines:",
+        "- Respond concisely.",
+        "- Limit responses to 3\u20135 short paragraphs or bullet points.",
+        "- Prioritize key facts over long explanations.",
+        "- If the answer is long, summarize the key points first.",
+        "- Prefer bullet points for clarity when listing information.",
+      ].join("\n");
+
       // Parse configuration
       const config: any = {
-        systemPrompt:
-          configData.systemPrompt ||
-          "You are a helpful AI assistant powered by Google Gemini.",
+        systemPrompt: configData.systemPrompt || defaultSystemPrompt,
         enabled: configData.enabled !== false,
         availableModels,
         tools: configData.tools || {},

@@ -5,16 +5,15 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ErrorCategory, ErrorSeverity, logAppError } from "@/lib/errors/logger";
 import type {
   GitHubContextState,
   GitHubRepo,
   GitHubSearchResponse,
 } from "@/lib/types";
-import { Checkbox } from "./ui/checkbox";
 
 type GitHubContextIntegrationProps = {
   githubPAT?: string;
@@ -23,7 +22,6 @@ type GitHubContextIntegrationProps = {
   className?: string;
 };
 
-// Debounce hook for search input
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -57,10 +55,8 @@ export function GitHubContextIntegration({
   const [userRepos, setUserRepos] = useState<GitHubRepo[]>([]);
   const [loadingUserRepos, setLoadingUserRepos] = useState(false);
 
-  // Debounce search query to avoid excessive API calls
   const debouncedSearchQuery = useDebounce(state.searchQuery, 300);
 
-  // Fetch user's repositories
   const fetchUserRepositories = useCallback(async () => {
     if (!githubPAT) {
       return;
@@ -87,48 +83,12 @@ export function GitHubContextIntegration({
       const repos: GitHubRepo[] = await response.json();
       setUserRepos(repos);
     } catch (error) {
-      console.error("Failed to fetch user repositories:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch user repositories";
-
-      // Categorize error based on type
-      let errorCategory = ErrorCategory.EXTERNAL_SERVICE_ERROR;
-      let severity = ErrorSeverity.ERROR;
-
-      if (errorMessage.includes("401")) {
-        errorCategory = ErrorCategory.UNAUTHORIZED_ACCESS;
-        severity = ErrorSeverity.WARNING;
-      } else if (
-        errorMessage.includes("403") ||
-        errorMessage.includes("rate limit")
-      ) {
-        errorCategory = ErrorCategory.API_RATE_LIMIT;
-        severity = ErrorSeverity.WARNING;
-      }
-
-      // Log the GitHub API error
-      logAppError(
-        errorCategory,
-        `Failed to fetch GitHub user repositories: ${errorMessage}`,
-        {
-          operation: "fetchUserRepositories",
-          error: errorMessage,
-          errorType:
-            error instanceof Error ? error.constructor.name : "Unknown",
-          stack: error instanceof Error ? error.stack : undefined,
-          timestamp: new Date().toISOString(),
-        },
-        undefined, // No user_id available in this component
-        severity
-      );
+      console.error("Failed to fetch GitHub user repositories:", error);
     } finally {
       setLoadingUserRepos(false);
     }
   }, [githubPAT]);
 
-  // Search GitHub repositories using the GitHub API
   const searchRepositories = useCallback(
     async (query: string) => {
       if (!githubPAT) {
@@ -187,43 +147,7 @@ export function GitHubContextIntegration({
             ? error.message
             : "Failed to search repositories";
 
-        // Categorize error based on message content
-        let errorCategory = ErrorCategory.EXTERNAL_SERVICE_ERROR;
-        let severity = ErrorSeverity.ERROR;
-
-        if (
-          errorMessage.includes("Invalid GitHub Personal Access Token") ||
-          errorMessage.includes("401")
-        ) {
-          errorCategory = ErrorCategory.UNAUTHORIZED_ACCESS;
-          severity = ErrorSeverity.WARNING;
-        } else if (
-          errorMessage.includes("rate limit") ||
-          errorMessage.includes("403")
-        ) {
-          errorCategory = ErrorCategory.API_RATE_LIMIT;
-          severity = ErrorSeverity.WARNING;
-        } else if (errorMessage.includes("404")) {
-          errorCategory = ErrorCategory.API_REQUEST_FAILED;
-          severity = ErrorSeverity.WARNING;
-        }
-
-        // Log the GitHub API error
-        logAppError(
-          errorCategory,
-          `Failed to search GitHub repositories: ${errorMessage}`,
-          {
-            operation: "searchRepositories",
-            query,
-            error: errorMessage,
-            errorType:
-              error instanceof Error ? error.constructor.name : "Unknown",
-            stack: error instanceof Error ? error.stack : undefined,
-            timestamp: new Date().toISOString(),
-          },
-          undefined, // No user_id available in this component
-          severity
-        );
+        console.error("Failed to search GitHub repositories:", errorMessage);
 
         setState((prev) => ({
           ...prev,
@@ -237,32 +161,27 @@ export function GitHubContextIntegration({
     [githubPAT]
   );
 
-  // Effect to fetch user repositories on mount
   useEffect(() => {
     if (githubPAT) {
       fetchUserRepositories();
     }
   }, [githubPAT, fetchUserRepositories]);
 
-  // Effect to trigger search when debounced query changes
   useEffect(() => {
     searchRepositories(debouncedSearchQuery);
   }, [debouncedSearchQuery, searchRepositories]);
 
-  // Handle repository selection/deselection
   const handleRepoToggle = useCallback(
     (repo: GitHubRepo, isSelected: boolean) => {
       let newSelectedRepos: GitHubRepo[];
 
       if (isSelected) {
-        // Add repository if not already selected
         if (selectedRepos.find((r) => r.id === repo.id)) {
           newSelectedRepos = selectedRepos;
         } else {
           newSelectedRepos = [...selectedRepos, repo];
         }
       } else {
-        // Remove repository
         newSelectedRepos = selectedRepos.filter((r) => r.id !== repo.id);
       }
 
@@ -271,7 +190,6 @@ export function GitHubContextIntegration({
     [selectedRepos, onRepoSelectionChange]
   );
 
-  // Handle removing a selected repository
   const handleRemoveRepo = useCallback(
     (repoId: number) => {
       const newSelectedRepos = selectedRepos.filter((r) => r.id !== repoId);
@@ -280,7 +198,6 @@ export function GitHubContextIntegration({
     [selectedRepos, onRepoSelectionChange]
   );
 
-  // Check if a repository is selected
   const isRepoSelected = useCallback(
     (repoId: number) => {
       return selectedRepos.some((r) => r.id === repoId);
@@ -288,7 +205,6 @@ export function GitHubContextIntegration({
     [selectedRepos]
   );
 
-  // Get repositories to display (user repos when no search, search results when searching)
   const displayRepos = state.searchQuery.trim()
     ? state.searchResults
     : userRepos;
@@ -296,7 +212,6 @@ export function GitHubContextIntegration({
 
   return (
     <div className={className}>
-      {/* GitHub PAT Status */}
       {!githubPAT && (
         <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
@@ -306,7 +221,6 @@ export function GitHubContextIntegration({
         </div>
       )}
 
-      {/* Search Input */}
       <div className="relative mb-4">
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
         <Input
@@ -336,7 +250,6 @@ export function GitHubContextIntegration({
         )}
       </div>
 
-      {/* Error Display */}
       {state.error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
           <p className="text-red-800 text-sm dark:text-red-200">
@@ -345,7 +258,6 @@ export function GitHubContextIntegration({
         </div>
       )}
 
-      {/* Selected Repositories */}
       {selectedRepos.length > 0 && (
         <div className="mb-4">
           <h4 className="mb-2 flex items-center gap-2 font-medium text-sm">
@@ -377,7 +289,6 @@ export function GitHubContextIntegration({
         </div>
       )}
 
-      {/* Repository List */}
       {displayRepos.length > 0 && (
         <div>
           <h4 className="mb-3 flex items-center gap-2 font-medium text-sm">
@@ -455,7 +366,6 @@ export function GitHubContextIntegration({
         </div>
       )}
 
-      {/* Empty States */}
       {isShowingUserRepos &&
         userRepos.length === 0 &&
         !loadingUserRepos &&

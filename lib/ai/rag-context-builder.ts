@@ -44,6 +44,7 @@ export type RagContextResult = {
 type BuildRagContextParams = {
   queryText: string;
   limitToRepoName?: string;
+  limitToRepoNames?: string[];
 };
 
 const DEFAULT_INDEX_NAME = "repo-chunks";
@@ -92,13 +93,22 @@ function normalizePineconeHost(host: string): string {
   return `https://${host}`;
 }
 
-function getRepoName(limitToRepoName?: string): string | undefined {
+function getRepoNames(
+  limitToRepoName?: string,
+  limitToRepoNames?: string[]
+): string[] | undefined {
+  // Environment variable takes highest priority (single repo override)
   const configured = process.env.RAG_REPO_NAME?.trim();
   if (configured) {
-    return configured;
+    return [configured];
   }
+  // Array param from request (multi-repo selection)
+  if (limitToRepoNames && limitToRepoNames.length > 0) {
+    return limitToRepoNames;
+  }
+  // Legacy single repo param
   if (limitToRepoName?.trim()) {
-    return limitToRepoName.trim();
+    return [limitToRepoName.trim()];
   }
   return undefined;
 }
@@ -187,15 +197,19 @@ async function resolvePineconeIndexHost(
 }
 
 function buildPineconeFilter(
-  repoName?: string
+  repoNames?: string[]
 ): Record<string, unknown> | undefined {
   const clauses: Record<string, unknown>[] = [
     { chunk_type: { $eq: "content" } },
     { embedded: { $eq: true } },
   ];
 
-  if (repoName) {
-    clauses.push({ repo_name: { $eq: repoName } });
+  if (repoNames && repoNames.length > 0) {
+    if (repoNames.length === 1) {
+      clauses.push({ repo_name: { $eq: repoNames[0] } });
+    } else {
+      clauses.push({ repo_name: { $in: repoNames } });
+    }
   }
 
   return { $and: clauses };
@@ -357,8 +371,22 @@ function formatRagContext(
     return "";
   }
 
+  // Only add response instructions when context snippets are present
+  lines.push("---");
   lines.push("Cite file paths and line ranges when you rely on this context.");
-  return `\n\n${lines.join("\n")}`;
+  lines.push(
+    "Keep your response concise: use bullet points or short paragraphs and prioritize key facts."
+  );
+
+  const assembled = `\n\n${lines.join("\n")}`;
+
+  // Safeguard: cap final RAG context to prevent excessive prompt size
+  const RAG_CONTEXT_HARD_CAP = 10_000;
+  if (assembled.length > RAG_CONTEXT_HARD_CAP) {
+    return assembled.slice(0, RAG_CONTEXT_HARD_CAP) + "\n...[context truncated]";
+  }
+
+  return assembled;
 }
 
 export async function buildRagContext(
@@ -429,7 +457,7 @@ export async function buildRagContext(
   const pineconeNamespace = process.env.RAG_NAMESPACE ?? DEFAULT_NAMESPACE;
   const voyageModel =
     process.env.VOYAGE_EMBEDDING_MODEL?.trim() || DEFAULT_VOYAGE_MODEL;
-  const repoName = getRepoName(params.limitToRepoName);
+  const repoNames = getRepoNames(params.limitToRepoName, params.limitToRepoNames);
 
   try {
     const embedding = await createVoyageEmbedding(
@@ -444,7 +472,7 @@ export async function buildRagContext(
       ? normalizePineconeHost(configuredHost)
       : await resolvePineconeIndexHost(pineconeApiKey, pineconeIndex, timeoutMs);
 
-    const filter = buildPineconeFilter(repoName);
+    const filter = buildPineconeFilter(repoNames);
 
     const queryPayload: Record<string, unknown> = {
       vector: embedding,

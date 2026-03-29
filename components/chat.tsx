@@ -5,6 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
+import { useLocalStorage } from "usehooks-ts";
 import { unstable_serialize } from "swr/infinite";
 import { ChatHeader } from "@/components/chat-header";
 import {
@@ -20,6 +21,7 @@ import {
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
+import { useRepos } from "@/hooks/use-repos";
 import type { Vote } from "@/lib/db/drizzle-schema";
 import { ChatSDKError } from "@/lib/errors";
 import { storage } from "@/lib/storage";
@@ -69,6 +71,20 @@ export function Chat({
     currentModelIdRef.current = currentModelId;
   }, [currentModelId]);
 
+  // RAG repo selection state — persists across sessions
+  const [ragSelectedRepos, setRagSelectedRepos] = useLocalStorage<string[]>(
+    "rag-selected-repos",
+    []
+  );
+  const ragSelectedReposRef = useRef(ragSelectedRepos);
+
+  useEffect(() => {
+    ragSelectedReposRef.current = ragSelectedRepos;
+  }, [ragSelectedRepos]);
+
+  // Fetch available repos for the selector
+  const { repos: availableRepos, isLoading: reposLoading } = useRepos();
+
   const {
     messages,
     setMessages,
@@ -105,6 +121,7 @@ export function Chat({
           selectedChatModel: currentModelIdRef.current,
           selectedVisibilityType: visibilityType,
           thinkingEnabled,
+          selectedRepos: ragSelectedReposRef.current,
           ...request.body,
         };
 
@@ -359,11 +376,15 @@ export function Chat({
           {!isReadonly && (
             <MultimodalInput
               attachments={attachments}
+              availableRepos={availableRepos}
+              availableReposLoading={reposLoading}
               chatId={id}
               githubPAT={storage.github.getToken() || undefined}
               input={input}
               messages={messages}
               onModelChange={setCurrentModelId}
+              onRagSelectedReposChange={setRagSelectedRepos}
+              ragSelectedRepos={ragSelectedRepos}
               selectedModelId={currentModelId}
               selectedVisibilityType={visibilityType}
               sendMessage={sendMessage}

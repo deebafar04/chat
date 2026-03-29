@@ -17,11 +17,10 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ErrorCategory, ErrorSeverity, logAppError } from "@/lib/errors/logger";
 import type { GitHubFile, GitHubFolder, GitHubRepo } from "@/lib/types";
-import { Checkbox } from "./ui/checkbox";
 
 type GitHubFileBrowserProps = {
   repo: GitHubRepo;
@@ -58,9 +57,6 @@ export function GitHubFileBrowser({
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Recursively update a tree node with new children
-   */
   const updateTreeNode = useCallback(
     (
       tree: TreeNode[],
@@ -88,9 +84,6 @@ export function GitHubFileBrowser({
     []
   );
 
-  /**
-   * Load directory contents from GitHub API
-   */
   const loadDirectory = useCallback(
     async (path: string) => {
       if (!githubPAT) {
@@ -128,7 +121,6 @@ export function GitHubFileBrowser({
 
         const data = await response.json();
 
-        // Handle if response is a file instead of directory
         if (!Array.isArray(data)) {
           throw new Error("Selected path is a file, not a directory");
         }
@@ -144,7 +136,6 @@ export function GitHubFileBrowser({
           children: item.type === "dir" ? [] : undefined,
         }));
 
-        // Sort: directories first, then files
         nodes.sort((a, b) => {
           if (a.type === b.type) {
             return a.name.localeCompare(b.name);
@@ -156,52 +147,13 @@ export function GitHubFileBrowser({
           setTreeData(nodes);
           setError(null);
         } else {
-          // Update the specific directory in the tree
           setTreeData((prevTree) => updateTreeNode(prevTree, path, nodes));
         }
       } catch (error) {
-        console.error("Failed to load directory:", error);
         const errorMessage =
           error instanceof Error ? error.message : "Failed to load directory";
 
-        // Categorize error based on type
-        let errorCategory = ErrorCategory.EXTERNAL_SERVICE_ERROR;
-        let severity = ErrorSeverity.ERROR;
-
-        if (errorMessage.includes("not found")) {
-          errorCategory = ErrorCategory.API_REQUEST_FAILED;
-          severity = ErrorSeverity.WARNING;
-        } else if (
-          errorMessage.includes("rate limit") ||
-          errorMessage.includes("403")
-        ) {
-          errorCategory = ErrorCategory.API_RATE_LIMIT;
-          severity = ErrorSeverity.WARNING;
-        } else if (
-          errorMessage.includes("401") ||
-          errorMessage.includes("permissions")
-        ) {
-          errorCategory = ErrorCategory.UNAUTHORIZED_ACCESS;
-          severity = ErrorSeverity.WARNING;
-        }
-
-        // Log the GitHub API error
-        logAppError(
-          errorCategory,
-          `Failed to load GitHub directory: ${errorMessage}`,
-          {
-            repo: repo.full_name,
-            path,
-            isRoot,
-            error: errorMessage,
-            errorType:
-              error instanceof Error ? error.constructor.name : "Unknown",
-            stack: error instanceof Error ? error.stack : undefined,
-            timestamp: new Date().toISOString(),
-          },
-          undefined, // No user_id available in this component
-          severity
-        );
+        console.error("Failed to load GitHub directory:", errorMessage);
 
         if (isRoot) {
           setError(errorMessage);
@@ -216,16 +168,12 @@ export function GitHubFileBrowser({
     [repo, githubPAT, updateTreeNode]
   );
 
-  // Load root directory on mount
   useEffect(() => {
     if (repo && githubPAT) {
       loadDirectory("");
     }
   }, [repo, githubPAT, loadDirectory]);
 
-  /**
-   * Recursively toggle node expansion state
-   */
   const toggleNodeExpansion = useCallback(
     (tree: TreeNode[], targetPath: string): TreeNode[] => {
       return tree.map((node) => {
@@ -248,9 +196,6 @@ export function GitHubFileBrowser({
     []
   );
 
-  /**
-   * Find a node in the tree by path
-   */
   const findNode = useCallback(
     (tree: TreeNode[], targetPath: string): TreeNode | null => {
       for (const node of tree) {
@@ -269,33 +214,23 @@ export function GitHubFileBrowser({
     []
   );
 
-  /**
-   * Toggle directory expansion (lazy load)
-   */
   const toggleDirectory = useCallback(
     async (path: string) => {
       setTreeData((prevTree) => {
         const updatedTree = toggleNodeExpansion(prevTree, path);
-
-        // Find the node to check if we need to load children
         const node = findNode(updatedTree, path);
         if (
           node?.isExpanded &&
           (!node.children || node.children.length === 0)
         ) {
-          // Load children lazily
           loadDirectory(path);
         }
-
         return updatedTree;
       });
     },
     [loadDirectory, findNode, toggleNodeExpansion]
   );
 
-  /**
-   * Handle file selection
-   */
   const handleFileToggle = useCallback(
     (file: TreeNode, isSelected: boolean) => {
       const githubFile: GitHubFile = {
@@ -319,9 +254,6 @@ export function GitHubFileBrowser({
     [selectedFiles, onFileSelectionChange]
   );
 
-  /**
-   * Handle folder selection
-   */
   const handleFolderToggle = useCallback(
     (folder: TreeNode, isSelected: boolean) => {
       const githubFolder: GitHubFolder = {
@@ -343,29 +275,16 @@ export function GitHubFileBrowser({
     [selectedFolders, onFolderSelectionChange]
   );
 
-  /**
-   * Check if file is selected
-   */
   const isFileSelected = useCallback(
-    (path: string) => {
-      return selectedFiles.some((f) => f.path === path);
-    },
+    (path: string) => selectedFiles.some((f) => f.path === path),
     [selectedFiles]
   );
 
-  /**
-   * Check if folder is selected
-   */
   const isFolderSelected = useCallback(
-    (path: string) => {
-      return selectedFolders.some((f) => f.path === path);
-    },
+    (path: string) => selectedFolders.some((f) => f.path === path),
     [selectedFolders]
   );
 
-  /**
-   * Get file icon based on extension
-   */
   const getFileIcon = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
 
@@ -402,9 +321,6 @@ export function GitHubFileBrowser({
     }
   };
 
-  /**
-   * Filter tree data based on search query
-   */
   const filterTree = (nodes: TreeNode[], query: string): TreeNode[] => {
     if (!query.trim()) {
       return nodes;
@@ -431,16 +347,13 @@ export function GitHubFileBrowser({
           return {
             ...node,
             children: filterTree(node.children, query),
-            isExpanded: query.trim() ? true : node.isExpanded, // Auto-expand when searching
+            isExpanded: query.trim() ? true : node.isExpanded,
           };
         }
         return node;
       });
   };
 
-  /**
-   * Render tree node recursively
-   */
   const renderTreeNode = (node: TreeNode, depth = 0) => {
     const isFile = node.type === "file";
     const isExpanded = node.isExpanded;
@@ -454,7 +367,6 @@ export function GitHubFileBrowser({
           className="group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
         >
-          {/* Expand/collapse button for directories */}
           {!isFile && (
             <button
               className="rounded p-0.5 hover:bg-muted"
@@ -471,7 +383,6 @@ export function GitHubFileBrowser({
             </button>
           )}
 
-          {/* Checkbox */}
           <Checkbox
             checked={isSelected}
             className="mt-0.5"
@@ -484,7 +395,6 @@ export function GitHubFileBrowser({
             }}
           />
 
-          {/* Icon */}
           {isFile ? (
             getFileIcon(node.name)
           ) : isExpanded ? (
@@ -493,10 +403,8 @@ export function GitHubFileBrowser({
             <Folder className="h-4 w-4 text-blue-400" />
           )}
 
-          {/* Name */}
           <span className="flex-1 truncate text-sm">{node.name}</span>
 
-          {/* Size for files */}
           {isFile && node.size !== undefined && (
             <span className="text-muted-foreground text-xs">
               {formatBytes(node.size)}
@@ -504,7 +412,6 @@ export function GitHubFileBrowser({
           )}
         </div>
 
-        {/* Render children for expanded directories */}
         {!isFile && isExpanded && node.children && node.children.length > 0 && (
           <div>
             {node.children.map((child) => renderTreeNode(child, depth + 1))}
@@ -518,7 +425,6 @@ export function GitHubFileBrowser({
 
   return (
     <div className={className}>
-      {/* Search Input */}
       <div className="relative mb-3">
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
         <Input
@@ -540,7 +446,6 @@ export function GitHubFileBrowser({
         )}
       </div>
 
-      {/* Loading state */}
       {isLoadingRoot && (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="mr-2 h-6 w-6 animate-spin" />
@@ -548,14 +453,12 @@ export function GitHubFileBrowser({
         </div>
       )}
 
-      {/* Error state */}
       {error && !isLoadingRoot && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
           <p className="text-red-800 text-sm dark:text-red-200">{error}</p>
         </div>
       )}
 
-      {/* Tree view */}
       {!isLoadingRoot && !error && (
         <ScrollArea className="h-96 rounded-lg border bg-muted/20">
           <div className="p-2">
@@ -572,7 +475,6 @@ export function GitHubFileBrowser({
         </ScrollArea>
       )}
 
-      {/* Selection summary */}
       {(selectedFiles.length > 0 || selectedFolders.length > 0) && (
         <div className="mt-3 text-muted-foreground text-xs">
           Selected: {selectedFiles.length} file
@@ -585,9 +487,6 @@ export function GitHubFileBrowser({
   );
 }
 
-/**
- * Format bytes to human-readable string
- */
 function formatBytes(bytes: number): string {
   if (bytes === 0) {
     return "0 B";

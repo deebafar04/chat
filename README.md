@@ -1,201 +1,71 @@
-# CodeChat
+<a href="https://chat.vercel.ai/">
+  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
+  <h1 align="center">Chatbot</h1>
+</a>
 
-A multimodal AI chat application with advanced agent orchestration, supporting multiple AI providers and rich interactive features including code execution, diagram generation, and GitHub integration.
+<p align="center">
+    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+</p>
 
-## Tech Stack
+<p align="center">
+  <a href="https://chatbot.dev"><strong>Read Docs</strong></a> ·
+  <a href="#features"><strong>Features</strong></a> ·
+  <a href="#model-providers"><strong>Model Providers</strong></a> ·
+  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
+  <a href="#running-locally"><strong>Running locally</strong></a>
+</p>
+<br/>
 
-### Frontend
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **UI Library**: React 19
-- **Styling**: Tailwind CSS
-- **State Management**: React Context & Hooks
-- **Real-time Updates**: Server-Sent Events (SSE)
+## Features
 
-### Backend
-- **Runtime**: Node.js
-- **API**: Next.js API Routes
-- **Database**: PostgreSQL (Supabase)
-- **ORM**: Drizzle ORM
-- **Authentication**: Custom implementation with localStorage API keys
+- [Next.js](https://nextjs.org) App Router
+  - Advanced routing for seamless navigation and performance
+  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
+- [AI SDK](https://ai-sdk.dev/docs/introduction)
+  - Unified API for generating text, structured objects, and tool calls with LLMs
+  - Hooks for building dynamic chat and generative user interfaces
+  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
+- [shadcn/ui](https://ui.shadcn.com)
+  - Styling with [Tailwind CSS](https://tailwindcss.com)
+  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
+- Data Persistence
+  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
+  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
+- [Auth.js](https://authjs.dev)
+  - Simple and secure authentication
 
-### AI Providers
-- **Google AI**: Gemini 2.0 Flash, Gemini 2.0 Flash Thinking, Gemini 1.5 Pro/Flash
-- **OpenAI**: GPT-4, GPT-4 Turbo, GPT-3.5 Turbo
-- **Anthropic**: Claude 3.5 Sonnet, Claude 3 Opus/Haiku
+## Model Providers
 
-### Key Features
-- Multi-agent orchestration system
-- GitHub MCP (Model Context Protocol) integration
-- Document versioning and artifact system
-- Python code execution sandbox
-- Mermaid diagram rendering
-- Admin panel for configuration
-- Comprehensive logging and monitoring
+This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. The default model is [OpenAI](https://openai.com) GPT-4.1 Mini, with support for Anthropic, Google, and xAI models.
 
-## Architecture
+### AI Gateway Authentication
 
-### High-Level System Architecture
+**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
 
-```mermaid
-graph TB
-    Client[Client Browser]
+**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
 
-    subgraph "Frontend Layer"
-        UI[Next.js UI Components]
-        Store[Client State Management]
-        API_Client[API Client]
-    end
+With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
 
-    subgraph "Backend Layer"
-        API[Next.js API Routes]
-        Router[Agent Router]
+## Deploy Your Own
 
-        subgraph "Agent System"
-            ChatAgent[Chat Agent]
-            DocAgent[Document Agent]
-            PyAgent[Python Agent]
-            MermaidAgent[Mermaid Agent]
-            GitHubAgent[GitHub MCP Agent]
-            ProviderAgent[Provider Tools Agent]
-        end
+You can deploy your own version of Chatbot to Vercel with one click:
 
-        subgraph "AI Providers"
-            Google[Google Gemini]
-            OpenAI[OpenAI GPT]
-            Anthropic[Anthropic Claude]
-        end
-    end
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
 
-    subgraph "Data Layer"
-        DB[(PostgreSQL/Supabase)]
-    end
+## Running locally
 
-    Client --> UI
-    UI --> Store
-    Store --> API_Client
-    API_Client --> API
-    API --> Router
-    Router --> ChatAgent
-    Router --> DocAgent
-    Router --> PyAgent
-    Router --> MermaidAgent
-    Router --> GitHubAgent
-    Router --> ProviderAgent
+You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
 
-    ChatAgent --> Google
-    ChatAgent --> OpenAI
-    ChatAgent --> Anthropic
+> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
 
-    DocAgent --> DB
-    PyAgent --> Google
-    MermaidAgent --> Google
-    GitHubAgent --> Google
+1. Install Vercel CLI: `npm i -g vercel`
+2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
+3. Download your environment variables: `vercel env pull`
 
-    API --> DB
+```bash
+pnpm install
+pnpm db:migrate # Setup database or apply latest database changes
+pnpm dev
 ```
 
-### Agent Orchestration Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant UI
-    participant API
-    participant Router
-    participant Agent
-    participant AI Provider
-    participant DB
-
-    User->>UI: Send message with context
-    UI->>API: POST /api/chat
-    API->>Router: Route to appropriate agent
-    Router->>Agent: Initialize with tools
-
-    loop Streaming Response
-        Agent->>AI Provider: Stream request
-        AI Provider-->>Agent: Partial response
-        Agent->>API: Stream chunk
-        API-->>UI: SSE event
-        UI-->>User: Display update
-    end
-
-    Agent->>DB: Save message & artifacts
-    DB-->>Agent: Confirmation
-    Agent->>API: Complete
-    API-->>UI: Done event
-```
-
-### Data Flow Architecture
-
-```mermaid
-flowchart LR
-    subgraph Input
-        Text[Text Input]
-        Files[File Uploads]
-        GitHub[GitHub Context]
-        Images[Images/PDFs]
-    end
-
-    subgraph Processing
-        Validation[Input Validation]
-        AgentSelection[Agent Selection]
-        Context[Context Building]
-        AIProcess[AI Processing]
-    end
-
-    subgraph Output
-        Response[Streamed Response]
-        Artifacts[Artifacts<br/>Documents/Code/Diagrams]
-        Logs[Activity Logs]
-    end
-
-    subgraph Storage
-        Messages[(Messages)]
-        Documents[(Documents)]
-        Chats[(Chats)]
-        UsageLogs[(Usage Logs)]
-    end
-
-    Text --> Validation
-    Files --> Validation
-    GitHub --> Validation
-    Images --> Validation
-
-    Validation --> AgentSelection
-    AgentSelection --> Context
-    Context --> AIProcess
-
-    AIProcess --> Response
-    AIProcess --> Artifacts
-    AIProcess --> Logs
-
-    Response --> Messages
-    Artifacts --> Documents
-    Logs --> UsageLogs
-    Messages --> Chats
-```
-
-## Quick Start
-
-For detailed setup instructions, architecture deep-dive, and comprehensive documentation, please refer to:
-
-**[📖 Complete Overview & Documentation](./docs/OVERVIEW.md)**
-
-The overview document includes:
-- Detailed project overview and quick start guide
-- Complete tech stack breakdown
-- Contribution guidelines
-- Full documentation index with table of contents for all guides
-
-## Key Documentation
-
-- **[Admin Panel](./docs/admin-panel.md)** - Configuration and management
-- **[Agent Architecture](./docs/agent-architecture.md)** - Multi-agent system design
-- **[Database Design](./docs/database-design.md)** - Schema and data model
-- **[Multimodal Features](./docs/multimodal-chat-features.md)** - Chat capabilities
-- **[Testing Strategy](./docs/testing.md)** - Comprehensive testing guide
-
-## License
-
-MIT License - see LICENSE file for details
+Your app template should now be running on [localhost:3000](http://localhost:3000).

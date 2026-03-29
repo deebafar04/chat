@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       selectedChatModel,
       selectedVisibilityType,
       thinkingEnabled = false,
+      selectedRepos = [],
     } = requestBody;
 
     // Authenticate user
@@ -109,6 +110,8 @@ export async function POST(request: Request) {
 
     const ragContextResult = await buildRagContext({
       queryText: latestUserText,
+      limitToRepoNames:
+        selectedRepos.length > 0 ? selectedRepos : undefined,
     });
 
     const ragContext = ragContextResult.context;

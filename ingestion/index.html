@@ -16,29 +16,14 @@ param.showsearch = "false"; // Set to true to include search bar
 <script type="text/javascript" src="https://model.earth/localsite/js/localsite.js?showheader=true&showsearch=true"></script>
 
 <script>
-loadMarkdown("ABOUT.md", "aboutDiv", "_parent");
 loadMarkdown("README.md", "readmeDiv", "_parent");
-loadMarkdown("TECH.md", "techDiv", "_parent");
 </script>
-
-<style>
-#readmeDiv img {
-  max-width: 100%; /* constrain the large image, without stretching the small image */
-  height: auto;
-}
-</style>
 
 </head>
 
 <body>
 <div class="content contentpadding large-list">
-  <div id="aboutDiv"></div>
-
-  <h1 style="margin-bottom:0px">Parent Readme</h1>
-  <div id="readmeDiv"></div><br>
-
-  <h1 style="margin-bottom:0px">Earthscape / ModelEarth</h1>
-  <div id="techDiv"></div>
+  <div id="readmeDiv"></div>
 </div>
 </body>
 </html>

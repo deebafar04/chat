@@ -5,7 +5,7 @@ import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 
 // Default model constant
-const DEFAULT_CHAT_MODEL = "gemini-2.0-flash";
+const DEFAULT_CHAT_MODEL = "gemini-2.5-flash";
 
 import { getCurrentUser } from "@/lib/auth/server";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";

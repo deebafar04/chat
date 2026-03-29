@@ -12,4 +12,4 @@ export * from "./core/types";
 export { GoogleChatAgent } from "./providers/google/chat-agent";
 
 // Default model constant
-export const DEFAULT_CHAT_MODEL = "gemini-2.0-flash";
+export const DEFAULT_CHAT_MODEL = "gemini-2.5-flash";

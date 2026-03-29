@@ -57,7 +57,6 @@ export function GitHubRepoModal({
   };
 
   const handleCancel = () => {
-    // Reset to original selections
     setTempSelectedRepos(selectedRepos);
     setTempSelectedFiles(selectedFiles);
     setTempSelectedFolders(selectedFolders);
@@ -72,7 +71,6 @@ export function GitHubRepoModal({
     JSON.stringify(tempSelectedFolders.map((f) => f.path).sort()) !==
       JSON.stringify(selectedFolders.map((f) => f.path).sort());
 
-  // Determine which repo to show in file browser
   const selectedRepo =
     tempSelectedRepos.length > 0 ? tempSelectedRepos[0] : null;
 
@@ -94,10 +92,10 @@ export function GitHubRepoModal({
             </div>
             <div>
               <h2 className="font-semibold text-xl">
-                GitHub Context Selection
+                Resource Area Selection
               </h2>
               <p className="text-muted-foreground text-sm">
-                Choose repositories, files, and folders for conversation
+                Choose resource areas, files, and folders for conversation
                 context.
               </p>
             </div>
