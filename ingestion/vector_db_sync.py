@@ -461,7 +461,7 @@ def dispatch_chunking(filepath: Path):
             # Re-chunk defensively so we never upsert empty embeddings.
             return re_chunk_if_oversize(chunks), True, "content"
     except Exception as e:
-        logger.warning(f"LlamaChunker error for {filepath}: {e}")
+        logger.warning("LlamaChunker error for %s: %s", filepath, _compact_issue_message(str(e)))
 
     # Fallback: unsupported files get metadata summary
     chunks, _ = chunk_as_summary(path)
@@ -530,7 +530,7 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
         raise RuntimeError(f"Batch embedding failed: {e}")
 
 
-def get_accurate_line_range(chunk: str, full_text: str) -> str:
+def get_accurate_line_range(chunk: str, full_text: str, filepath: str = "(unknown)") -> str:
     if not full_text or not chunk:
         return "L1-L1"
 
@@ -562,14 +562,14 @@ def get_accurate_line_range(chunk: str, full_text: str) -> str:
         return "L1-L1"
 
     except Exception as e:
-        logger.warning(f"Error calculating line range: {e}")
+        logger.warning("Error calculating line range for %s: %s", filepath, _compact_issue_message(str(e)))
         return "L1-L1"
 
 
 def prepare_file_chunks(filepath: str, status: str, repo_name: str, commit_sha: str):
     try:
         if not Path(filepath).exists():
-            logger.warning(f"File not found: {filepath}")
+            logger.warning("File not found: %s", filepath)
             return []
 
         chunks, should_embed, chunk_type = dispatch_chunking(Path(filepath))
@@ -580,7 +580,7 @@ def prepare_file_chunks(filepath: str, status: str, repo_name: str, commit_sha: 
             try:
                 full_text = Path(filepath).read_text(encoding="utf-8", errors="ignore")
             except Exception as e:
-                logger.warning(f"Could not read full text for {filepath}: {e}")
+                logger.warning("Could not read full text for %s: %s", filepath, _compact_issue_message(str(e)))
 
         for i, chunk in enumerate(chunks):
             if not chunk or not chunk.strip():
@@ -600,7 +600,7 @@ def prepare_file_chunks(filepath: str, status: str, repo_name: str, commit_sha: 
                     "chunk_index": i,
                     "chunk_id": chunk_id,
                     "content": chunk,
-                    "line_range": get_accurate_line_range(chunk, full_text),
+                    "line_range": get_accurate_line_range(chunk, full_text, str(filepath)),
                     "embedded": False,
                     "should_embed": bool(should_embed),
                     "status": status,
@@ -793,9 +793,22 @@ def parse_args():
     return parser.parse_args()
 
 
+def _compact_issue_message(message: str, max_len: int = 320) -> str:
+    compact = re.sub(r"\s+", " ", str(message or "")).strip()
+    if len(compact) <= max_len:
+        return compact
+    return compact[: max_len - 3] + "..."
+
+
 def append_error(path: str, file_path: str, operation: str, message: str, status: Optional[str] = None) -> None:
     try:
-        rec = {"file_path": file_path, "operation": operation, "message": message}
+        rec = {
+            "level": "error",
+            "file_path": file_path,
+            "operation": operation,
+            "message": message,
+            "logged_at": datetime.now().astimezone().isoformat(),
+        }
         if status:
             rec["status"] = status
         p = Path(path)
@@ -805,7 +818,6 @@ def append_error(path: str, file_path: str, operation: str, message: str, status
     except Exception:
         # Swallow error; rely on idempotent commit-range replay for recovery
         pass
-
 
 def normalize_relative_path(path: str) -> str:
     normalized = str(path or "").strip().replace("\\", "/")
@@ -974,11 +986,13 @@ def compute_reindex_all_files(repo_root: str, errors_out: str) -> List[Tuple[str
     for sub_path in sorted(submodules):
         sub_abs = Path(repo_root) / sub_path
         if not sub_abs.is_dir():
+            logger.error("Submodule path not found on disk while listing tracked files: %s", sub_path)
             append_error(errors_out, sub_path, "ls-files-submodule", "Submodule path not found on disk")
             continue
         try:
             out = _run_git(["-C", str(sub_abs), "ls-files"], repo_root)
         except Exception as e:
+            logger.error("Failed to list tracked files for submodule %s: %s", sub_path, _compact_issue_message(str(e)))
             append_error(errors_out, sub_path, "ls-files-submodule", str(e))
             continue
 
@@ -1056,6 +1070,7 @@ def compute_changes_from_git(repo_root: str, from_rev: str, to_rev: str) -> List
                     elif len(cols) >= 2:
                         changes.append((st, f"{sub_path}/{cols[1]}"))
         except Exception as e:
+            logger.error("Failed to diff submodule %s: %s", sub_path, _compact_issue_message(str(e)))
             append_error("chat/.vector_sync_errors.jsonl", sub_path, "diff-submodule", str(e))
 
     return changes
@@ -1389,6 +1404,13 @@ def run_sync(
                 float(state["embed_seconds"]),
                 float(state["pinecone_seconds"]),
             )
+        logger.error(
+            "File failed: file=%s operation=%s status=%s error=%s",
+            file_path,
+            operation,
+            status,
+            _compact_issue_message(message),
+        )
         append_error(errors_out, file_path, operation, message, status=status)
         if snapshot is not None:
             _log_file_timing(*snapshot)
@@ -1479,13 +1501,14 @@ def run_sync(
                 item["estimated_upsert_bytes"] = estimate_upsert_record_bytes(item["entry"])
                 if not _put_with_stop(upsert_queue, item, "upsert"):
                     return
-        except Exception:
+        except Exception as batch_error:
             with state_lock:
                 batch_stats["embedding_batch_fallbacks"] += 1
             logger.warning(
-                "Embedding batch fallback: records=%d est_tokens=%d; retrying per file",
+                "Embedding batch fallback: records=%d est_tokens=%d reason=%s; retrying per file",
                 len(active_items),
                 active_tokens,
+                _compact_issue_message(str(batch_error)),
             )
             for file_id, file_items in group_queue_items_by_file(active_items).items():
                 if _file_is_finalized(file_id):
@@ -1531,13 +1554,14 @@ def run_sync(
             with state_lock:
                 timing_stats["pinecone_seconds"] += elapsed
             _record_upsert_success(active_items, elapsed)
-        except Exception:
+        except Exception as batch_error:
             with state_lock:
                 batch_stats["upsert_batch_fallbacks"] += 1
             logger.warning(
-                "Upsert batch fallback: records=%d est_bytes=%d; retrying per file",
+                "Upsert batch fallback: records=%d est_bytes=%d reason=%s; retrying per file",
                 len(active_items),
                 active_bytes,
+                _compact_issue_message(str(batch_error)),
             )
             for file_id, file_items in group_queue_items_by_file(active_items).items():
                 if _file_is_finalized(file_id):
@@ -1658,7 +1682,7 @@ def run_sync(
                 if path.exists() and path.is_dir():
                     with state_lock:
                         file_stats["skipped"] += 1
-                    append_error(errors_out, filepath, "skip-dir", "Path is a directory; skipping", status=status)
+                    logger.warning("Skipping directory path during sync: %s", filepath)
                     _log_direct_file_timing(filepath, file_started)
                     continue
 
@@ -1741,6 +1765,12 @@ def run_sync(
                     with state_lock:
                         file_stats["errors"] += 1
                         failures.append({"file_path": filepath, "operation": "process", "message": str(e), "status": status})
+                    logger.error(
+                        "File failed before queue registration: file=%s operation=process status=%s error=%s",
+                        filepath,
+                        status,
+                        _compact_issue_message(str(e)),
+                    )
                     append_error(errors_out, filepath, "process", str(e), status=status)
                     _log_direct_file_timing(filepath, file_started, pinecone_elapsed=initial_pinecone_elapsed)
     finally:
