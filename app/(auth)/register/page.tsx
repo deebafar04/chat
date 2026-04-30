@@ -7,35 +7,25 @@ import { AuthForm } from "@/components/auth-form";
 import { SubmitButton } from "@/components/submit-button";
 import { toast } from "@/components/toast";
 import { useAuth } from "@/lib/auth/hooks";
-<<<<<<< HEAD
 import { resendSignupEmail, type SignUpEmailStatus } from "@/lib/auth/client";
-=======
->>>>>>> upstream/main
 import {
   ErrorCategory,
   ErrorSeverity,
   logAuthError,
 } from "@/lib/errors/logger";
-<<<<<<< HEAD
 import { isSupabaseConfigured } from "@/lib/db/supabase-client";
 
 const isVercel = !!process.env.NEXT_PUBLIC_VERCEL_URL;
-=======
->>>>>>> upstream/main
 
 export default function Page() {
   const _router = useRouter();
   const { signUp, loading, error, clearError } = useAuth();
-<<<<<<< HEAD
   const dbUnavailable = !isSupabaseConfigured;
-=======
->>>>>>> upstream/main
 
   const [email, setEmail] = useState("");
   const [isSuccessful, _setIsSuccessful] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
-<<<<<<< HEAD
   const [emailStatus, setEmailStatus] = useState<SignUpEmailStatus>("sent");
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -72,8 +62,6 @@ export default function Page() {
       setIsResending(false);
     }
   };
-=======
->>>>>>> upstream/main
 
   // Handle auth errors
   useEffect(() => {
@@ -155,11 +143,7 @@ export default function Page() {
 
     try {
       // Sign up with Supabase Auth with default user role
-<<<<<<< HEAD
       const status = await signUp(emailValue, password, {
-=======
-      await signUp(emailValue, password, {
->>>>>>> upstream/main
         role: "user",
         isActive: true,
         settings: {
@@ -168,7 +152,6 @@ export default function Page() {
         },
       });
 
-<<<<<<< HEAD
       setEmailStatus(status);
       setShowEmailVerification(true);
       setIsSubmitting(false);
@@ -197,17 +180,6 @@ export default function Page() {
             "Verification email could not be sent due to a server email-config issue.",
         });
       }
-=======
-      // Since signUp doesn't return the result, we need to check auth state differently
-      // For now, assume email confirmation is required and show verification message
-      setShowEmailVerification(true);
-      setIsSubmitting(false);
-      toast({
-        type: "success",
-        description:
-          "Please check your email for a verification link to complete your registration.",
-      });
->>>>>>> upstream/main
 
       // The auth state change will be handled by the context
     } catch (err) {
@@ -229,7 +201,6 @@ export default function Page() {
       );
 
       console.error("Registration error:", err);
-<<<<<<< HEAD
 
       // Route email-delivery failures to the verification screen so the user
       // sees remediation steps instead of just a generic toast. The auth-error
@@ -254,14 +225,11 @@ export default function Page() {
         setShowEmailVerification(true);
         setIsSubmitting(false);
       }
-=======
->>>>>>> upstream/main
     }
   };
 
   // Show email verification message if needed
   if (showEmailVerification) {
-<<<<<<< HEAD
     const isSent = emailStatus === "sent";
     const isAlreadyRegistered = emailStatus === "already_registered";
     const isRateLimited = emailStatus === "rate_limited";
@@ -325,20 +293,10 @@ export default function Page() {
             <div className={iconWrapClass}>
               <svg
                 className={iconClass}
-=======
-    return (
-      <div className="flex h-dvh w-screen items-start justify-center bg-background pt-12 md:items-center md:pt-0">
-        <div className="flex w-full max-w-md flex-col gap-8 overflow-hidden rounded-2xl">
-          <div className="flex flex-col items-center justify-center gap-4 px-4 text-center sm:px-16">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-              <svg
-                className="h-8 w-8 text-green-600 dark:text-green-400"
->>>>>>> upstream/main
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-<<<<<<< HEAD
                 {isProblem ? (
                   <path
                     d="M12 9v2m0 4h.01M4.93 19h14.14a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0L3.19 16a2 2 0 001.74 3z"
@@ -473,47 +431,16 @@ export default function Page() {
             )}
             <button
               type="button"
-=======
-                <path
-                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-xl dark:text-zinc-50">
-              Check Your Email
-            </h3>
-            <p className="text-gray-500 text-sm dark:text-zinc-400">
-              We've sent a verification link to <strong>{email}</strong>. Please
-              check your email and click the link to complete your registration.
-            </p>
-            <p className="text-gray-400 text-xs dark:text-zinc-500">
-              Didn't receive the email? Check your spam folder or try
-              registering again.
-            </p>
-          </div>
-          <div className="px-4 sm:px-16">
-            <button
->>>>>>> upstream/main
               className="w-full rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 text-sm hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               onClick={() => {
                 setShowEmailVerification(false);
                 setEmail("");
-<<<<<<< HEAD
                 setEmailStatus("sent");
                 setResendCooldown(0);
                 clearError();
               }}
             >
               {isAlreadyRegistered ? "Use a different email" : "Try Again"}
-=======
-                clearError();
-              }}
-            >
-              Try Again
->>>>>>> upstream/main
             </button>
             <p className="mt-4 text-center text-gray-600 text-sm dark:text-zinc-400">
               {"Already have an account? "}
@@ -532,7 +459,6 @@ export default function Page() {
   }
 
   return (
-<<<<<<< HEAD
     <div className="flex min-h-full w-full flex-col bg-background">
       <div className="flex flex-1 items-start justify-center pt-12 md:items-center md:pt-0">
         <div className="flex w-full max-w-md flex-col gap-8 overflow-hidden rounded-2xl">
@@ -571,34 +497,6 @@ export default function Page() {
             </AuthForm>
           </div>
         </div>
-=======
-    <div className="flex h-dvh w-screen items-start justify-center bg-background pt-12 md:items-center md:pt-0">
-      <div className="flex w-full max-w-md flex-col gap-12 overflow-hidden rounded-2xl">
-        <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
-          <h3 className="font-semibold text-xl dark:text-zinc-50">Sign Up</h3>
-          <p className="text-gray-500 text-sm dark:text-zinc-400">
-            Create an account with your email and password
-          </p>
-        </div>
-        <AuthForm action={handleSubmit} defaultEmail={email}>
-          <SubmitButton
-            disabled={isSubmitting || loading}
-            isSuccessful={isSuccessful}
-          >
-            {isSubmitting || loading ? "Creating Account..." : "Sign Up"}
-          </SubmitButton>
-          <p className="mt-4 text-center text-gray-600 text-sm dark:text-zinc-400">
-            {"Already have an account? "}
-            <Link
-              className="font-semibold text-gray-800 hover:underline dark:text-zinc-200"
-              href="/login"
-            >
-              Sign in
-            </Link>
-            {" instead."}
-          </p>
-        </AuthForm>
->>>>>>> upstream/main
       </div>
     </div>
   );

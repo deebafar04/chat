@@ -6,10 +6,7 @@
  */
 
 import type { Session, User } from "@supabase/supabase-js";
-<<<<<<< HEAD
 import { headers } from "next/headers";
-=======
->>>>>>> upstream/main
 import { redirect } from "next/navigation";
 import { createServerComponentClient } from "@/lib/db/supabase-client";
 import {
@@ -31,7 +28,6 @@ export interface ServerAuthError extends Error {
 }
 
 /**
-<<<<<<< HEAD
  * Decide whether the current request must be authenticated.
  *
  * Resolution:
@@ -61,8 +57,6 @@ export async function isAuthRequired(reqHeaders?: Headers): Promise<boolean> {
 }
 
 /**
-=======
->>>>>>> upstream/main
  * Get the current authenticated user from server context
  * Returns null if no user is authenticated
  *
@@ -89,7 +83,6 @@ export async function getCurrentUser(): Promise<User | null> {
     } = await supabase.auth.getUser();
 
     if (error) {
-<<<<<<< HEAD
       // "Auth session missing" is the normal anonymous case; only treat
       // unexpected errors as failures worth logging.
       const isSessionMissing =
@@ -112,23 +105,6 @@ export async function getCurrentUser(): Promise<User | null> {
           success: false,
         });
       }
-=======
-      console.error("Error getting current user:", error);
-
-      // Log authentication error
-      await logUserActivity({
-        user_id: "unknown",
-        activity_type: UserActivityType.AUTH_LOGIN,
-        activity_category: ActivityCategory.AUTHENTICATION,
-        activity_metadata: {
-          description: "Failed to get current user",
-          error_message: error.message,
-          error_code: error.status,
-        },
-        correlation_id: correlationId,
-        success: false,
-      });
->>>>>>> upstream/main
 
       return null;
     }

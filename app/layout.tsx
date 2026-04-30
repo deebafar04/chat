@@ -2,10 +2,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-<<<<<<< HEAD
 import { NextDevToolsOffset } from "@/components/next-dev-tools-offset";
-=======
->>>>>>> upstream/main
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth/context";
 
@@ -13,13 +10,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
-<<<<<<< HEAD
   title: "Earthscape by DreamStudio",
   description: "Earthscape by DreamStudio — AI-powered chat experience.",
-=======
-  title: "Next.js Chatbot Template",
-  description: "Next.js chatbot template using the AI SDK.",
->>>>>>> upstream/main
 };
 
 export const viewport = {
@@ -65,19 +57,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-<<<<<<< HEAD
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme script must run before paint */}
         <script dangerouslySetInnerHTML={{ __html: THEME_COLOR_SCRIPT }} />
-=======
-        <script
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
-        />
->>>>>>> upstream/main
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -86,10 +69,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <Toaster position="top-center" />
-<<<<<<< HEAD
             <NextDevToolsOffset />
-=======
->>>>>>> upstream/main
             {children}
           </AuthProvider>
         </ThemeProvider>

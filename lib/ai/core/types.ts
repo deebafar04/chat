@@ -194,7 +194,6 @@ export type ChatParams = {
   dataStream?: any; // UIMessageStreamWriter for tool execution
   artifactContext?: string; // Context about artifacts in the conversation
   user?: any; // User object for tool execution context
-<<<<<<< HEAD
   ragStatus?: {
     skippedReason?:
       | "disabled"
@@ -204,8 +203,6 @@ export type ChatParams = {
       | "error";
     sourceCount?: number;
   };
-=======
->>>>>>> upstream/main
 };
 
 /**

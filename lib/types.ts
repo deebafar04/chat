@@ -24,7 +24,6 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   usage: AppUsage;
-<<<<<<< HEAD
   "rag-status": {
     skippedReason?:
       | "disabled"
@@ -34,8 +33,6 @@ export type CustomUIDataTypes = {
       | "error";
     sourceCount?: number;
   } | null;
-=======
->>>>>>> upstream/main
 };
 
 export type ChatMessage = UIMessage<MessageMetadata, CustomUIDataTypes>;

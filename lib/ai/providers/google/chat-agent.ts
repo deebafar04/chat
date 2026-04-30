@@ -218,7 +218,6 @@ export class GoogleChatAgent {
       // Create proper UI message stream using AI SDK
       const stream = createUIMessageStream({
         execute: ({ writer: dataStream }) => {
-<<<<<<< HEAD
           if (params.ragStatus) {
             dataStream.write({
               type: "data-rag-status",
@@ -227,8 +226,6 @@ export class GoogleChatAgent {
             });
           }
 
-=======
->>>>>>> upstream/main
           // Use streamText directly with Google model from chat agent
           const model = this.getModel(params.modelId);
 
@@ -262,10 +259,7 @@ export class GoogleChatAgent {
             system: systemPrompt,
             messages,
             temperature: 0.7,
-<<<<<<< HEAD
             maxRetries: 0, // Fail immediately on quota/rate-limit errors instead of retrying
-=======
->>>>>>> upstream/main
           };
 
           // Add tools if available
@@ -318,7 +312,6 @@ export class GoogleChatAgent {
             await params.onFinish({ messages: event.messages });
           }
         },
-<<<<<<< HEAD
         onError: (error) => {
           const msg = error instanceof Error ? error.message : String(error);
           if (
@@ -330,10 +323,6 @@ export class GoogleChatAgent {
             return "Google AI quota exceeded. Please try again later or upgrade your plan.";
           }
           return msg || "Oops, an error occurred!";
-=======
-        onError: () => {
-          return "Oops, an error occurred!";
->>>>>>> upstream/main
         },
       });
 

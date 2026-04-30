@@ -3,23 +3,9 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-<<<<<<< HEAD
 export type Repo = { name: string; label: string };
 
 const ALLOWED_RAW_HOST = "raw.githubusercontent.com";
-=======
-/**
- * Default repo list used when .gitmodules and .siterepos are unavailable.
- * These should match the `repo_name` values stored in Pinecone metadata.
- */
-const DEFAULT_REPOS: string[] = [
-  "data-commons",
-  "open-footprint",
-  "community-data",
-  "requests",
-  "useeio-widgets",
-];
->>>>>>> upstream/main
 
 /**
  * Parse repository names from a .gitmodules file.
@@ -33,16 +19,8 @@ function parseGitmodules(content: string): string[] {
 
   while ((match = pattern.exec(content)) !== null) {
     const raw = match[1].trim();
-<<<<<<< HEAD
     const name = raw.split("/").pop()?.trim();
     if (name) repos.push(name);
-=======
-    // Take the last path segment (e.g., "path/to/repo" → "repo")
-    const name = raw.split("/").pop()?.trim();
-    if (name) {
-      repos.push(name);
-    }
->>>>>>> upstream/main
   }
 
   return repos;
@@ -50,7 +28,6 @@ function parseGitmodules(content: string): string[] {
 
 /**
  * Parse repository names from a .siterepos file.
-<<<<<<< HEAD
  * Supports git config format: [siterepo "name"] with path/url entries.
  */
 function parseSiterepos(content: string): string[] {
@@ -75,24 +52,6 @@ async function readProjectFile(filename: string): Promise<string | null> {
   try {
     const base = process.env.WEBROOT_PATH ?? resolve(process.cwd(), "..");
     const filePath = resolve(base, filename);
-=======
- * Assumes plain text format: one repo name per line.
- * Lines starting with # are treated as comments.
- */
-function parseSiterepos(content: string): string[] {
-  return content
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("#"));
-}
-
-/**
- * Read a file from the project root, returning null if it doesn't exist.
- */
-async function readProjectFile(filename: string): Promise<string | null> {
-  try {
-    const filePath = resolve(process.cwd(), filename);
->>>>>>> upstream/main
     return await readFile(filePath, "utf-8");
   } catch {
     return null;
@@ -100,7 +59,6 @@ async function readProjectFile(filename: string): Promise<string | null> {
 }
 
 /**
-<<<<<<< HEAD
  * Fetch raw file content from a URL.
  * Only allows https://raw.githubusercontent.com/ URLs to prevent SSRF.
  * Returns null on failure.
@@ -176,39 +134,4 @@ export async function getAvailableRepos(): Promise<Repo[]> {
   }
 
   return [...repoMap.values()].sort((a, b) => a.name.localeCompare(b.name));
-=======
- * Get the list of available repositories for RAG filtering.
- *
- * Attempts to read repo names from:
- *   1. .gitmodules (git submodule config)
- *   2. .siterepos (plain text, one repo per line)
- *
- * Falls back to a hardcoded default list if neither file exists
- * or parsing yields zero results.
- */
-export async function getAvailableRepos(): Promise<string[]> {
-  const repos: string[] = [];
-
-  // Try .gitmodules
-  const gitmodulesContent = await readProjectFile(".gitmodules");
-  if (gitmodulesContent) {
-    repos.push(...parseGitmodules(gitmodulesContent));
-  }
-
-  // Try .siterepos
-  const sitereposContent = await readProjectFile(".siterepos");
-  if (sitereposContent) {
-    repos.push(...parseSiterepos(sitereposContent));
-  }
-
-  // Deduplicate and sort
-  const unique = [...new Set(repos)].sort();
-
-  // Fall back to defaults if nothing was parsed
-  if (unique.length === 0) {
-    return DEFAULT_REPOS;
-  }
-
-  return unique;
->>>>>>> upstream/main
 }

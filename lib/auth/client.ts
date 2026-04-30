@@ -13,11 +13,7 @@ import type {
   Session,
   User,
 } from "@supabase/supabase-js";
-<<<<<<< HEAD
 import { createClient, isSupabaseConfigured } from "@/lib/db/supabase-client";
-=======
-import { createClient } from "@/lib/db/supabase-client";
->>>>>>> upstream/main
 
 // Types for user metadata
 export type UserMetadata = {
@@ -37,7 +33,6 @@ export type AuthResult = {
   error: AuthError | null;
 };
 
-<<<<<<< HEAD
 // Status of the verification email after signUp.
 // - sent: a verification email was (or should have been) dispatched
 // - already_registered: Supabase returned success but identities is empty,
@@ -108,8 +103,6 @@ function classifySignUpSuccess(user: User | null, session: Session | null): Sign
   return "sent";
 }
 
-=======
->>>>>>> upstream/main
 /**
  * Sign up a new user with email and password
  * Assigns default 'user' role in metadata
@@ -131,7 +124,6 @@ export async function signUp(
   email: string,
   password: string,
   metadata: Partial<UserMetadata> = {}
-<<<<<<< HEAD
 ): Promise<SignUpResult> {
   if (!isSupabaseConfigured) {
     return {
@@ -141,9 +133,6 @@ export async function signUp(
       emailStatus: "unknown",
     };
   }
-=======
-): Promise<AuthResult> {
->>>>>>> upstream/main
   try {
     const supabase = createClient();
 
@@ -158,7 +147,6 @@ export async function signUp(
       ...metadata,
     };
 
-<<<<<<< HEAD
     // emailRedirectTo makes the verification link in the email return to
     // the origin the user signed up from. Without this, Supabase falls back
     // to its "Site URL" project setting, which on localhost typically points
@@ -166,17 +154,12 @@ export async function signUp(
     const emailRedirectTo =
       typeof window !== "undefined" ? window.location.origin : undefined;
 
-=======
->>>>>>> upstream/main
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: defaultMetadata,
-<<<<<<< HEAD
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
-=======
->>>>>>> upstream/main
       },
     });
 
@@ -204,37 +187,27 @@ export async function signUp(
       }
     }
 
-<<<<<<< HEAD
     const emailStatus: SignUpEmailStatus = error
       ? classifySignUpError(error)
       : classifySignUpSuccess(data.user, data.session);
 
-=======
->>>>>>> upstream/main
     return {
       user: data.user,
       session: data.session,
       error,
-<<<<<<< HEAD
       emailStatus,
-=======
->>>>>>> upstream/main
     };
   } catch (err) {
     return {
       user: null,
       session: null,
       error: err as AuthError,
-<<<<<<< HEAD
       emailStatus: "unknown",
-=======
->>>>>>> upstream/main
     };
   }
 }
 
 /**
-<<<<<<< HEAD
  * Resend the signup verification email for an unconfirmed user.
  *
  * Used by the post-signup screen so the user can retry without re-entering
@@ -269,8 +242,6 @@ export async function resendSignupEmail(
 }
 
 /**
-=======
->>>>>>> upstream/main
  * Sign in an existing user with email and password
  *
  * @param email - User's email address
@@ -289,12 +260,9 @@ export async function signIn(
   email: string,
   password: string
 ): Promise<AuthResult> {
-<<<<<<< HEAD
   if (!isSupabaseConfigured) {
     return { user: null, session: null, error: new Error("Supabase is not configured") as AuthError };
   }
-=======
->>>>>>> upstream/main
   try {
     const supabase = createClient();
 
@@ -351,10 +319,7 @@ export async function signIn(
  * // User is now signed out and session is cleared
  */
 export async function signOut(): Promise<{ error: AuthError | null }> {
-<<<<<<< HEAD
   if (!isSupabaseConfigured) return { error: null };
-=======
->>>>>>> upstream/main
   try {
     const supabase = createClient();
 
@@ -407,10 +372,7 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
  * }
  */
 export async function getSession(): Promise<Session | null> {
-<<<<<<< HEAD
   if (!isSupabaseConfigured) return null;
-=======
->>>>>>> upstream/main
   try {
     const supabase = createClient();
     const {
@@ -437,10 +399,7 @@ export async function getSession(): Promise<Session | null> {
  * }
  */
 export async function getUser(): Promise<User | null> {
-<<<<<<< HEAD
   if (!isSupabaseConfigured) return null;
-=======
->>>>>>> upstream/main
   try {
     const supabase = createClient();
     const {
@@ -528,21 +487,14 @@ export async function isAdmin(user?: User | null): Promise<boolean> {
 export function onAuthStateChange(
   callback: (event: AuthChangeEvent, session: Session | null) => void
 ) {
-<<<<<<< HEAD
   if (!isSupabaseConfigured) return () => {};
 
-=======
->>>>>>> upstream/main
   const supabase = createClient();
 
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange(callback);
 
-<<<<<<< HEAD
-=======
-  // Return unsubscribe function
->>>>>>> upstream/main
   return () => {
     subscription.unsubscribe();
   };

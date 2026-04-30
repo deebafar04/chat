@@ -101,10 +101,7 @@ export function SidebarHistory() {
   const { setOpenMobile } = useSidebar();
   const { id } = useParams();
   const { user } = useAuth();
-<<<<<<< HEAD
   const router = useRouter();
-=======
->>>>>>> upstream/main
 
   const {
     data: paginatedChatHistories,
@@ -116,10 +113,6 @@ export function SidebarHistory() {
     fallbackData: [],
   });
 
-<<<<<<< HEAD
-=======
-  const router = useRouter();
->>>>>>> upstream/main
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -290,13 +283,7 @@ export function SidebarHistory() {
 
                     {groupedChats.lastMonth.length > 0 && (
                       <div>
-<<<<<<< HEAD
                         <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">Last 30 days</div>
-=======
-                        <div className="px-2 py-1 text-sidebar-foreground/50 text-xs">
-                          Last 30 days
-                        </div>
->>>>>>> upstream/main
                         {groupedChats.lastMonth.map((chat) => (
                           <ChatItem
                             chat={chat}

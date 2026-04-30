@@ -13,12 +13,9 @@ import {
   ErrorSeverity,
   logAuthError,
 } from "@/lib/errors/logger";
-<<<<<<< HEAD
 import { isSupabaseConfigured } from "@/lib/db/supabase-client";
 
 const isVercel = !!process.env.NEXT_PUBLIC_VERCEL_URL;
-=======
->>>>>>> upstream/main
 
 function LoginForm() {
   const router = useRouter();
@@ -29,11 +26,8 @@ function LoginForm() {
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-<<<<<<< HEAD
   const dbUnavailable = !isSupabaseConfigured;
 
-=======
->>>>>>> upstream/main
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
@@ -43,10 +37,6 @@ function LoginForm() {
   }, [user, loading, router, searchParams]);
 
   const getErrorMessage = useCallback((authError: string): string => {
-<<<<<<< HEAD
-=======
-    // Map Supabase auth errors to user-friendly messages
->>>>>>> upstream/main
     if (authError.includes("Invalid login credentials")) {
       return "Invalid email or password. Please try again.";
     }
@@ -69,10 +59,6 @@ function LoginForm() {
       let errorCategory = ErrorCategory.LOGIN_FAILED;
       let severity = ErrorSeverity.ERROR;
 
-<<<<<<< HEAD
-=======
-      // Categorize the error
->>>>>>> upstream/main
       if (error.includes("Invalid login credentials")) {
         errorCategory = ErrorCategory.LOGIN_FAILED;
         severity = ErrorSeverity.WARNING;
@@ -87,10 +73,6 @@ function LoginForm() {
         severity = ErrorSeverity.ERROR;
       }
 
-<<<<<<< HEAD
-=======
-      // Log the error
->>>>>>> upstream/main
       logAuthError(
         errorCategory,
         `Login failed: ${error}`,
@@ -100,11 +82,7 @@ function LoginForm() {
           originalError: error,
           timestamp: new Date().toISOString(),
         },
-<<<<<<< HEAD
         undefined,
-=======
-        undefined, // No user_id since login failed
->>>>>>> upstream/main
         severity
       );
 
@@ -145,19 +123,11 @@ function LoginForm() {
       await signIn(emailValue, password);
       setIsSuccessful(true);
 
-<<<<<<< HEAD
-=======
-      // Redirect will be handled by the useEffect above
->>>>>>> upstream/main
       toast({
         type: "success",
         description: "Successfully signed in!",
       });
     } catch (err) {
-<<<<<<< HEAD
-=======
-      // Log unexpected errors
->>>>>>> upstream/main
       const errorMessage =
         err instanceof Error ? err.message : "Unknown login error";
 
@@ -192,7 +162,6 @@ function LoginForm() {
     );
   }
 
-<<<<<<< HEAD
   // Keep showing spinner while redirect to /chat is in flight
   if (user) {
     return (
@@ -243,40 +212,6 @@ function LoginForm() {
             </AuthForm>
           </div>
         </div>
-=======
-  // Don't render form if user is already authenticated (will redirect)
-  if (user) {
-    return null;
-  }
-
-  return (
-    <div className="flex h-dvh w-screen items-start justify-center bg-background pt-12 md:items-center md:pt-0">
-      <div className="flex w-full max-w-md flex-col gap-12 overflow-hidden rounded-2xl">
-        <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
-          <h3 className="font-semibold text-xl dark:text-zinc-50">Sign In</h3>
-          <p className="text-gray-500 text-sm dark:text-zinc-400">
-            Use your email and password to sign in
-          </p>
-        </div>
-        <AuthForm action={handleSubmit} defaultEmail={email}>
-          <SubmitButton
-            disabled={isSubmitting || loading}
-            isSuccessful={isSuccessful}
-          >
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </SubmitButton>
-          <p className="mt-4 text-center text-gray-600 text-sm dark:text-zinc-400">
-            {"Don't have an account? "}
-            <Link
-              className="font-semibold text-gray-800 hover:underline dark:text-zinc-200"
-              href="/register"
-            >
-              Sign up
-            </Link>
-            {" for free."}
-          </p>
-        </AuthForm>
->>>>>>> upstream/main
       </div>
     </div>
   );

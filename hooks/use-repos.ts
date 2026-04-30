@@ -1,22 +1,14 @@
 "use client";
 
-<<<<<<< HEAD
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Repo } from "@/lib/repos";
 
 type UseReposResult = {
   repos: Repo[];
-=======
-import { useCallback, useEffect, useState } from "react";
-
-type UseReposResult = {
-  repos: string[];
->>>>>>> upstream/main
   isLoading: boolean;
   error: string | null;
 };
 
-<<<<<<< HEAD
 const CACHE_KEY = "repos-cache";
 const FETCH_TIMEOUT_MS = process.env.NODE_ENV === "production" ? 8000 : 60000;
 
@@ -65,23 +57,10 @@ export function useRepos(): UseReposResult {
       setError(null);
       const response = await fetch("/api/repos", { signal: controller.signal });
       clearTimeout(timeoutId);
-=======
-export function useRepos(): UseReposResult {
-  const [repos, setRepos] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchRepos = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch("/api/repos");
->>>>>>> upstream/main
       if (!response.ok) {
         throw new Error(`Failed to fetch repos: ${response.status}`);
       }
       const data = await response.json();
-<<<<<<< HEAD
       const list: Repo[] = data.repos ?? [];
       setRepos(list);
       writeCache(list);
@@ -95,19 +74,11 @@ export function useRepos(): UseReposResult {
         console.error("Failed to fetch repos:", err);
         setError(msg);
       }
-=======
-      setRepos(data.repos ?? []);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to fetch repos";
-      console.error("Failed to fetch repos:", err);
-      setError(msg);
->>>>>>> upstream/main
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-<<<<<<< HEAD
   // On mount: hydrate from cache immediately, then fetch fresh data.
   useEffect(() => {
     const cached = readCache();
@@ -120,11 +91,6 @@ export function useRepos(): UseReposResult {
   // fetchRepos is stable (useCallback with no deps)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-=======
-  useEffect(() => {
-    fetchRepos();
-  }, [fetchRepos]);
->>>>>>> upstream/main
 
   return { repos, isLoading, error };
 }

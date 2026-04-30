@@ -150,11 +150,7 @@ export async function streamMermaidDiagramUpdate(params: {
     .replace("{updateInstruction}", updateInstruction);
 
   try {
-<<<<<<< HEAD
     // Use streamObject for structured diagram updates (migrate to streamText output:object post-install)
-=======
-    // Use streamObject for structured diagram updates
->>>>>>> upstream/main
     const { partialObjectStream } = streamObject({
       model,
       system: systemPrompt,

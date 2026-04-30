@@ -12,10 +12,6 @@ import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import { cn } from "@/lib/utils";
 import {
   CheckCircleFillIcon,
-<<<<<<< HEAD
-=======
-  ChevronDownIcon,
->>>>>>> upstream/main
   GlobeIcon,
   LockIcon,
 } from "./icons";
@@ -72,7 +68,6 @@ export function VisibilitySelector({
         )}
       >
         <Button
-<<<<<<< HEAD
           className="flex size-8 items-center justify-center rounded-full border border-border bg-transparent p-0 text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-muted hover:text-foreground transition-colors"
           data-testid="visibility-selector"
           variant="ghost"
@@ -83,19 +78,6 @@ export function VisibilitySelector({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="min-w-[300px]">
-=======
-          className="hidden h-8 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 md:flex md:h-fit md:px-2"
-          data-testid="visibility-selector"
-          variant="outline"
-        >
-          {selectedVisibility?.icon}
-          <span className="md:sr-only">{selectedVisibility?.label}</span>
-          <ChevronDownIcon />
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="start" className="min-w-[300px]">
->>>>>>> upstream/main
         {visibilities.map((visibility) => (
           <DropdownMenuItem
             className="group/item flex flex-row items-center justify-between gap-4"

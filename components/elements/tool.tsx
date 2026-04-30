@@ -1,10 +1,7 @@
 "use client";
 
 import type { ToolUIPart } from "ai";
-<<<<<<< HEAD
 import type React from "react";
-=======
->>>>>>> upstream/main
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -32,7 +29,6 @@ export const Tool = ({ className, ...props }: ToolProps) => (
   />
 );
 
-<<<<<<< HEAD
 // Extends the SDK's ToolUIPart state with approval/denial states used by this app
 type ToolState =
   | ToolUIPart["state"]
@@ -66,28 +62,6 @@ const getStatusBadge = (status: ToolState) => {
     "output-error": <XCircleIcon className="size-4 text-red-600" />,
     "output-denied": <XCircleIcon className="size-4 text-orange-500" />,
   };
-=======
-export type ToolHeaderProps = {
-  type: ToolUIPart["type"];
-  state: ToolUIPart["state"];
-  className?: string;
-};
-
-const getStatusBadge = (status: ToolUIPart["state"]) => {
-  const labels = {
-    "input-streaming": "Pending",
-    "input-available": "Running",
-    "output-available": "Completed",
-    "output-error": "Error",
-  } as const;
-
-  const icons = {
-    "input-streaming": <CircleIcon className="size-4" />,
-    "input-available": <ClockIcon className="size-4 animate-pulse" />,
-    "output-available": <CheckCircleIcon className="size-4 text-green-600" />,
-    "output-error": <XCircleIcon className="size-4 text-red-600" />,
-  } as const;
->>>>>>> upstream/main
 
   return (
     <Badge

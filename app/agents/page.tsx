@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
 import { SiteFooter } from "@/components/site-footer";
-=======
->>>>>>> upstream/main
 import {
     MessageSquare,
     Code2,
@@ -157,7 +154,6 @@ export default function AgentsPage() {
 
     return (
         <div className="min-h-screen bg-background">
-<<<<<<< HEAD
             {/* Hero Section */}
             <section className="px-4 pt-4 pb-8">
                 <div className="container mx-auto text-center">
@@ -173,59 +169,12 @@ export default function AgentsPage() {
                             <Sparkles className="h-4 w-4 text-purple-600" />
                             <Link href="/keys" className="text-sm font-medium text-purple-600">Model Key Setup</Link>
                         </div>
-=======
-            {/* Navigation */}
-            <nav className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-md">
-                <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                    <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity">
-                        AI Chatbot
-                    </Link>
-                    <div className="flex gap-2">
-                        <Button asChild variant="ghost">
-                            <Link href="/">Home</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/features">Features</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/faq">FAQ</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/login">Sign In</Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href="/register">Sign Up</Link>
-                        </Button>
-                    </div>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <section className="px-4 pt-32 pb-20">
-                <div className="container mx-auto text-center">
-                    <div className="animate-fade-in-up">
-                        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-4 py-2 border border-purple-500/20">
-                            <Sparkles className="h-4 w-4 text-purple-600" />
-                            <span className="text-sm font-medium text-purple-600">6 Specialized AI Agents</span>
-                        </div>
-                        <h1 className="mb-6 font-bold text-5xl md:text-7xl bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-                            Meet Our AI Agents
-                        </h1>
-                        <p className="mx-auto mb-8 max-w-3xl text-muted-foreground text-xl leading-relaxed">
-                            Each agent is specialized for specific tasks, working together to provide
-                            you with a comprehensive AI-powered experience.
-                        </p>
->>>>>>> upstream/main
                     </div>
                 </div>
             </section>
 
             {/* Agents Grid */}
-<<<<<<< HEAD
             <section className="px-4 py-8">
-=======
-            <section className="px-4 py-16">
->>>>>>> upstream/main
                 <div className="container mx-auto">
                     <div className="grid gap-12 lg:gap-16">
                         {agents.map((agent, index) => {
@@ -329,16 +278,7 @@ export default function AgentsPage() {
                 </div>
             </section>
 
-<<<<<<< HEAD
             <SiteFooter />
-=======
-            {/* Footer */}
-            <footer className="border-t px-4 py-8">
-                <div className="container mx-auto text-center text-muted-foreground">
-                    <p>&copy; 2026 DreamStudio Earth &ndash; CodeChat RAG addition to [Vercel Starter](https://model.earth/chat/).</p>
-                </div>
-            </footer>
->>>>>>> upstream/main
         </div>
     );
 }

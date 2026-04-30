@@ -8,7 +8,6 @@ export type LocalStorageSchema = {
     google?: string;
     anthropic?: string;
     openai?: string;
-<<<<<<< HEAD
     xai?: string;
     groq?: string;
     together?: string;
@@ -20,8 +19,6 @@ export type LocalStorageSchema = {
     github?: string;
     pinecone?: string;
     voyage?: string;
-=======
->>>>>>> upstream/main
   };
   integrations: {
     github?: {
@@ -90,7 +87,6 @@ export type GitHubVerificationResult = {
 };
 
 // API provider types
-<<<<<<< HEAD
 export type APIProvider =
   | "google"
   | "anthropic"
@@ -106,9 +102,6 @@ export type APIProvider =
   | "github"
   | "pinecone"
   | "voyage";
-=======
-export type APIProvider = "google" | "anthropic" | "openai";
->>>>>>> upstream/main
 
 // Storage manager interface
 export type StorageManager = {
@@ -119,10 +112,7 @@ export type StorageManager = {
   setGitHubPAT(token: string): void;
   removeGitHubPAT(): void;
   clearAll(): void;
-<<<<<<< HEAD
   migrateFromLegacy(): void;
-=======
->>>>>>> upstream/main
 
   // Session management
   setupAutoCleanup(): void;

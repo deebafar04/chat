@@ -1,13 +1,6 @@
 import type {
-<<<<<<< HEAD
   ModelMessage,
   UIMessage,
-=======
-  CoreAssistantMessage,
-  CoreToolMessage,
-  UIMessage,
-  UIMessagePart,
->>>>>>> upstream/main
 } from 'ai';
 import { type ClassValue, clsx } from 'clsx';
 import { formatISO } from 'date-fns';
@@ -68,12 +61,7 @@ export function generateUUID(): string {
   });
 }
 
-<<<<<<< HEAD
 type ResponseMessage = ModelMessage & { id: string };
-=======
-type ResponseMessageWithoutId = CoreToolMessage | CoreAssistantMessage;
-type ResponseMessage = ResponseMessageWithoutId & { id: string };
->>>>>>> upstream/main
 
 export function getMostRecentUserMessage(messages: UIMessage[]) {
   const userMessages = messages.filter((message) => message.role === 'user');

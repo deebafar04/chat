@@ -10,16 +10,12 @@ import {
   buildFileContext,
   getFileContextSummary,
 } from "@/lib/ai/file-context-builder";
-<<<<<<< HEAD
 import {
   createAuthErrorResponse,
   getCurrentUser,
   isAuthRequired,
   requireAuth,
 } from "@/lib/auth/server";
-=======
-import { createAuthErrorResponse, requireAuth } from "@/lib/auth/server";
->>>>>>> upstream/main
 import {
   deleteChatById,
   getChatById,
@@ -31,10 +27,7 @@ import {
   getLastDocumentInChat,
   getLatestDocumentVersionsByChat,
 } from "@/lib/db/queries/document";
-<<<<<<< HEAD
 import type { DBMessage } from "@/lib/db/drizzle-schema";
-=======
->>>>>>> upstream/main
 import { ChatSDKError } from "@/lib/errors";
 import {
   ActivityCategory,
@@ -71,12 +64,9 @@ export async function POST(request: Request) {
     return new ChatSDKError("bad_request:api").toResponse();
   }
 
-<<<<<<< HEAD
   // Track when DB operations have failed so we skip downstream persistence.
   let dbAvailable = true;
 
-=======
->>>>>>> upstream/main
   try {
     const {
       id,
@@ -85,7 +75,6 @@ export async function POST(request: Request) {
       selectedVisibilityType,
       thinkingEnabled = false,
       selectedRepos = [],
-<<<<<<< HEAD
       ragDisabled = false,
     } = requestBody;
 
@@ -174,42 +163,6 @@ export async function POST(request: Request) {
         console.warn("Failed to build file context:", fileErr);
       }
     }
-=======
-    } = requestBody;
-
-    // Authenticate user
-    const authResult = await requireAuth();
-    user = authResult.user;
-
-    // Chat management
-    chat = await getChatById({ id });
-    if (chat) {
-      if (chat.user_id !== user.id) {
-        return new ChatSDKError("forbidden:chat").toResponse();
-      }
-    } else {
-      const title = await generateTitleFromUserMessage({ message });
-      await saveChat({
-        id,
-        userId: user.id,
-        title,
-        visibility: selectedVisibilityType,
-      });
-    }
-
-    // Get messages and process files
-    const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
-
-    // Fetch all artifacts in the conversation
-    const allArtifacts = await getLatestDocumentVersionsByChat({ chatId: id });
-    const lastDocument = await getLastDocumentInChat({ chatId: id });
-    const artifactContext = buildArtifactContext(allArtifacts, lastDocument);
-
-    // Build file context from ALL messages (cached files from previous uploads)
-    // This retrieves files from cache or storage and builds formatted context
-    const fileContext = await buildFileContext(messagesFromDb, id, user.id);
->>>>>>> upstream/main
 
     // Build retrieval-augmented context from vector index using latest user text
     const latestUserText = message.parts
@@ -218,7 +171,6 @@ export async function POST(request: Request) {
       .join("\n")
       .trim();
 
-<<<<<<< HEAD
     // RAG retrieval credentials may come from the browser via headers
     // (x-pinecone-api-key / x-voyage-api-key, plus their `-enc` RSA-encrypted
     // variants). Server `.env` always wins inside buildRagContext.
@@ -257,13 +209,6 @@ export async function POST(request: Request) {
           pineconeApiKey: pineconeApiKeyOverride,
           voyageApiKey: voyageApiKeyOverride,
         });
-=======
-    const ragContextResult = await buildRagContext({
-      queryText: latestUserText,
-      limitToRepoNames:
-        selectedRepos.length > 0 ? selectedRepos : undefined,
-    });
->>>>>>> upstream/main
 
     const ragContext = ragContextResult.context;
 
@@ -303,7 +248,6 @@ export async function POST(request: Request) {
         ? `\n\nNewly Attached Files:\n${fileContexts.join("\n\n")}`
         : "";
 
-<<<<<<< HEAD
     // Get API key and validate.
     // x-google-api-key: plaintext (from the session's in-memory cache).
     // x-google-api-key-enc: RSA-encrypted blob (only server can decrypt).
@@ -314,10 +258,6 @@ export async function POST(request: Request) {
       const { decryptWithServerKey } = await import("@/lib/server-crypto");
       apiKey = decryptWithServerKey(rawApiKeyEnc);
     }
-=======
-    // Get API key and validate
-    const apiKey = request.headers.get("x-google-api-key");
->>>>>>> upstream/main
     const serverApiKey =
       process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
       process.env.GOOGLE_API_KEY ||
@@ -343,7 +283,6 @@ export async function POST(request: Request) {
       storagePath: filePart.storagePath || "", // Use storagePath if provided
     }));
 
-<<<<<<< HEAD
     // Save user message (best-effort)
     if (dbAvailable) {
       try {
@@ -405,60 +344,6 @@ export async function POST(request: Request) {
     // Create performance tracker for AI operation
     const aiTracker = new PerformanceTracker({
       user_id: user?.id,
-=======
-    // Save user message
-    await saveMessages({
-      messages: [
-        {
-          chatId: id,
-          id: message.id,
-          role: "user",
-          parts: message.parts,
-          attachments: fileAttachments,
-          createdAt: new Date(),
-          modelUsed: null,
-          inputTokens: null,
-          outputTokens: null,
-          cost: null,
-        },
-      ],
-    });
-
-    // Log user activity - chat message sent
-    await logUserActivity({
-      user_id: user.id,
-      correlation_id: correlationId,
-      activity_type: chat
-        ? UserActivityType.CHAT_MESSAGE_SEND
-        : UserActivityType.CHAT_CREATE,
-      activity_category: ActivityCategory.CHAT,
-      activity_metadata: {
-        chat_id: id,
-        model_selected: selectedChatModel,
-        thinking_enabled: thinkingEnabled,
-        file_count: fileParts.length,
-        total_files_in_context: fileSummary.fileCount,
-        total_file_size: fileSummary.totalSize,
-        message_length: message.parts
-          .filter((p: any) => p.type === "text")
-          .reduce((sum: number, p: any) => sum + (p.text?.length || 0), 0),
-        has_artifact_context: allArtifacts.length > 0,
-        has_file_context: fileSummary.fileCount > 0,
-        has_rag_context: ragContextResult.sourceCount > 0,
-        rag_source_count: ragContextResult.sourceCount,
-        rag_skipped_reason: ragContextResult.skippedReason || null,
-      },
-      resource_id: id,
-      resource_type: "chat",
-      request_path: request.url,
-      request_method: "POST",
-      success: true,
-    });
-
-    // Create performance tracker for AI operation
-    const aiTracker = new PerformanceTracker({
-      user_id: user.id,
->>>>>>> upstream/main
       correlation_id: correlationId,
       agent_type: AgentType.CHAT_MODEL_AGENT,
       operation_type: AgentOperationType.STREAMING,
@@ -477,14 +362,9 @@ export async function POST(request: Request) {
       chatAgent.setApiKey(serverApiKey);
     }
 
-<<<<<<< HEAD
     // Set GitHub PAT only when no CodeChat sources are selected (ragDisabled = true).
     // When sources are checked, RAG handles code context — GitHub MCP should not compete.
     if (githubPAT?.trim() && ragDisabled) {
-=======
-    // Set GitHub PAT if provided (for GitHub MCP agent)
-    if (githubPAT?.trim()) {
->>>>>>> upstream/main
       chatAgent.setGitHubPAT(githubPAT);
       console.log("🐙 [GITHUB-PAT] GitHub PAT provided for MCP agent");
     }
@@ -533,34 +413,24 @@ export async function POST(request: Request) {
       thinkingMode: thinkingEnabled,
       user,
       generateId: generateUUID,
-<<<<<<< HEAD
       ragStatus: {
         skippedReason: ragContextResult.skippedReason,
         sourceCount: ragContextResult.sourceCount,
       },
-=======
->>>>>>> upstream/main
       onFinish: async ({ messages }) => {
         // Save all assistant messages to database
         const assistantMessages = messages.filter(
           (msg) => msg.role === "assistant"
         );
 
-<<<<<<< HEAD
         if (assistantMessages.length > 0 && dbAvailable) {
-=======
-        if (assistantMessages.length > 0) {
->>>>>>> upstream/main
           console.log(
             "🔍 [FINISH] Processing",
             assistantMessages.length,
             "assistant messages"
           );
 
-<<<<<<< HEAD
           try {
-=======
->>>>>>> upstream/main
           await saveMessages({
             messages: assistantMessages.map((msg) => {
               console.log("🔍 [FINISH] Message has", msg.parts.length, "parts");
@@ -617,12 +487,9 @@ export async function POST(request: Request) {
               };
             }),
           });
-<<<<<<< HEAD
           } catch (dbError) {
             console.warn("Failed to persist assistant messages:", dbError);
           }
-=======
->>>>>>> upstream/main
         }
 
         // Log agent activity completion (Note: Token counts not available from chat agent interface)

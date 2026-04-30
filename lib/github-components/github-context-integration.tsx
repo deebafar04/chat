@@ -3,10 +3,7 @@
 import { GitBranch, GitFork, Globe, Lock, Search, Star, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-<<<<<<< HEAD
 import { RepoWikiLink } from "@/components/repo-wiki-link";
-=======
->>>>>>> upstream/main
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -219,13 +216,8 @@ export function GitHubContextIntegration({
       {!githubPAT && (
         <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-<<<<<<< HEAD
             GitHub Personal Access Token required for repository search.{" "}
             <a href="/settings" className="underline hover:opacity-80 whitespace-nowrap">Add Token in Settings</a>
-=======
-            GitHub Personal Access Token required for repository search. Please
-            configure your PAT in settings.
->>>>>>> upstream/main
           </p>
         </div>
       )}
@@ -321,7 +313,6 @@ export function GitHubContextIntegration({
                     }
                   />
                   <div className="min-w-0 flex-1">
-<<<<<<< HEAD
                     <div className="mb-1 flex items-start gap-2">
                       <GitBranch className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
@@ -343,20 +334,6 @@ export function GitHubContextIntegration({
                         githubAccount={repo.owner.login}
                         className="-mr-1 -mt-1"
                       />
-=======
-                    <div className="mb-1 flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                      <span className="truncate font-medium text-sm">
-                        {repo.full_name}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {repo.private ? (
-                          <Lock className="h-3 w-3 text-amber-500" />
-                        ) : (
-                          <Globe className="h-3 w-3 text-green-500" />
-                        )}
-                      </div>
->>>>>>> upstream/main
                     </div>
                     {repo.description && (
                       <p className="mb-2 line-clamp-2 text-muted-foreground text-xs">

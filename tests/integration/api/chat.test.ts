@@ -815,7 +815,6 @@ describe("Chat API Integration Tests", () => {
         expect(response.status).toBeGreaterThanOrEqual(400);
       });
 
-<<<<<<< HEAD
       it("should reject a message with empty text (bad_request:api)", async () => {
         const requestBody = {
           id: "660e8400-e29b-41d4-a716-446655440001",
@@ -878,8 +877,6 @@ describe("Chat API Integration Tests", () => {
         expect(mockChatAgent.chat).toHaveBeenCalled();
       });
 
-=======
->>>>>>> upstream/main
       it("should handle invalid request body", async () => {
         const invalidRequestBody = {
           id: "not-a-uuid",

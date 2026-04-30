@@ -9,10 +9,7 @@ const nextConfig = {
     // experimental: {
     //   ppr: true,
     // },
-<<<<<<< HEAD
     turbopack: { root: __dirname },
-=======
->>>>>>> upstream/main
     images: {
         remotePatterns: [
             {

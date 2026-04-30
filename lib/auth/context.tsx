@@ -25,10 +25,7 @@ import {
   getUser,
   getUserRole,
   onAuthStateChange,
-<<<<<<< HEAD
   type SignUpEmailStatus,
-=======
->>>>>>> upstream/main
   type UserMetadata,
 } from "./client";
 
@@ -47,11 +44,7 @@ type AuthContextType = {
     email: string,
     password: string,
     metadata?: Partial<UserMetadata>
-<<<<<<< HEAD
   ) => Promise<SignUpEmailStatus>;
-=======
-  ) => Promise<void>;
->>>>>>> upstream/main
   signOut: () => Promise<void>;
   clearError: () => void;
 
@@ -216,11 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       email: string,
       password: string,
       metadata?: Partial<UserMetadata>
-<<<<<<< HEAD
     ): Promise<SignUpEmailStatus> => {
-=======
-    ) => {
->>>>>>> upstream/main
       try {
         setLoading(true);
         setError(null);
@@ -231,15 +220,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           throw new Error(result.error.message);
         }
 
-<<<<<<< HEAD
         // State will be updated by onAuthStateChange listener.
         // Stop the global loading spinner here so the post-signup screen
         // (which depends on `loading` being false) can render.
         setLoading(false);
         return result.emailStatus;
-=======
-        // State will be updated by onAuthStateChange listener
->>>>>>> upstream/main
       } catch (err) {
         setError(err instanceof Error ? err.message : "Sign up failed");
         setLoading(false);

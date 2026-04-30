@@ -11,10 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-<<<<<<< HEAD
 import type { Repo } from "@/lib/repos";
-=======
->>>>>>> upstream/main
 import { cn } from "@/lib/utils";
 
 // GitHub logo icon
@@ -43,11 +40,7 @@ const GitHubIcon = () => (
 );
 
 type ResourceAreaSelectorProps = {
-<<<<<<< HEAD
   availableRepos: Repo[];
-=======
-  availableRepos: string[];
->>>>>>> upstream/main
   ragSelectedRepos: string[];
   onRagSelectedReposChange: (repos: string[]) => void;
   isLoading?: boolean;
@@ -69,22 +62,14 @@ function PureResourceAreaSelector({
   const allSelected = ragSelectedRepos.length === 0;
 
   const label = allSelected
-<<<<<<< HEAD
     ? "Pre-trained Repos"
-=======
-    ? "All Areas"
->>>>>>> upstream/main
     : ragSelectedRepos.length === 1
       ? ragSelectedRepos[0]
       : `${ragSelectedRepos.length} Areas`;
 
   const handleToggleRepo = (repoName: string) => {
     if (allSelected) {
-<<<<<<< HEAD
       const next = availableRepos.filter((r) => r.name !== repoName).map((r) => r.name);
-=======
-      const next = availableRepos.filter((r) => r !== repoName);
->>>>>>> upstream/main
       onRagSelectedReposChange(next);
     } else {
       const isCurrentlySelected = ragSelectedRepos.includes(repoName);
@@ -134,30 +119,17 @@ function PureResourceAreaSelector({
           onCheckedChange={handleSelectAll}
           onSelect={(e) => e.preventDefault()}
         >
-<<<<<<< HEAD
           Pre-trained Repos
-=======
-          All Areas
->>>>>>> upstream/main
         </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         {availableRepos.map((repo) => (
           <DropdownMenuCheckboxItem
-<<<<<<< HEAD
             key={repo.name}
             checked={isRepoChecked(repo.name)}
             onCheckedChange={() => handleToggleRepo(repo.name)}
             onSelect={(e) => e.preventDefault()}
           >
             {repo.label}
-=======
-            key={repo}
-            checked={isRepoChecked(repo)}
-            onCheckedChange={() => handleToggleRepo(repo)}
-            onSelect={(e) => e.preventDefault()}
-          >
-            {repo}
->>>>>>> upstream/main
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>

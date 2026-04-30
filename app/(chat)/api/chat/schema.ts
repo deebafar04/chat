@@ -26,10 +26,7 @@ export const postRequestBodySchema = z.object({
   selectedVisibilityType: z.enum(["public", "private"]),
   thinkingEnabled: z.boolean().optional().default(false),
   selectedRepos: z.array(z.string()).optional().default([]),
-<<<<<<< HEAD
   ragDisabled: z.boolean().optional().default(false),
-=======
->>>>>>> upstream/main
 });
 
 export type PostRequestBody = z.infer<typeof postRequestBodySchema>;

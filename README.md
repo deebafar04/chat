@@ -42,11 +42,7 @@ This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) t
 
 **For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
 
-<<<<<<< HEAD
 **For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env` file.
-=======
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
->>>>>>> upstream/main
 
 With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
 
@@ -58,11 +54,7 @@ You can deploy your own version of Chatbot to Vercel with one click:
 
 ## Running locally
 
-<<<<<<< HEAD
 You will need to use the environment variables [defined in `docker/.env.example`](../docker/.env.example) (at the webroot root) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `docker/.env` file is all that is necessary.
-=======
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
->>>>>>> upstream/main
 
 > Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
 

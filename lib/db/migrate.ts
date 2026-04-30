@@ -1,18 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-<<<<<<< HEAD
 import postgres from "postgres";
 import { loadEnvironment } from "../env-loader";
 
 loadEnvironment();
-=======
-import { config } from "dotenv";
-import postgres from "postgres";
-
-config({
-  path: ".env.local",
-});
->>>>>>> upstream/main
 
 const runMigrate = async () => {
   if (!process.env.POSTGRES_URL) {

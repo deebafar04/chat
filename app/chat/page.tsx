@@ -6,11 +6,7 @@ import { DataStreamHandler } from "@/components/data-stream-handler";
 // Default model constant
 const DEFAULT_CHAT_MODEL = "gemini-2.5-flash";
 
-<<<<<<< HEAD
 import { getCurrentUser, isAuthRequired } from "@/lib/auth/server";
-=======
-import { getCurrentUser } from "@/lib/auth/server";
->>>>>>> upstream/main
 import { generateUUID } from "@/lib/utils";
 
 // Force dynamic rendering for authenticated pages
@@ -19,13 +15,8 @@ export const dynamic = "force-dynamic";
 export default async function ChatPage() {
 	const user = await getCurrentUser();
 
-<<<<<<< HEAD
 	// Redirect unauthenticated users to login when this host requires auth.
 	if (!user && (await isAuthRequired())) {
-=======
-	// Redirect unauthenticated users to login
-	if (!user) {
->>>>>>> upstream/main
 		redirect("/login?returnTo=/chat");
 	}
 

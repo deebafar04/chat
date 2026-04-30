@@ -50,7 +50,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
   const [googleKey, setGoogleKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
-<<<<<<< HEAD
   const [xaiKey, setXaiKey] = useState("");
   const [groqKey, setGroqKey] = useState("");
   const [mistralKey, setMistralKey] = useState("");
@@ -62,8 +61,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
   // Export window state (1-hour window after last key edit)
   const [exportWindowOpen, setExportWindowOpen] = useState(false);
   const [exportEnvText, setExportEnvText] = useState<string | null>(null);
-=======
->>>>>>> upstream/main
 
   // Verification services
   const googleService = new GoogleVerificationService();
@@ -113,20 +110,16 @@ export function SettingsPage({ className }: SettingsPageProps) {
       // Simulate a small delay to show loading state
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-<<<<<<< HEAD
       // Decrypt all stored keys into the in-memory cache before reading them.
       await storage.general.initCrypto();
 
       // Check whether the 1-hour export window is still open.
       setExportWindowOpen(storage.general.isExportWindowOpen());
 
-=======
->>>>>>> upstream/main
       // Load existing API keys
       const existingGoogleKey = storage.apiKeys.get("google");
       const existingAnthropicKey = storage.apiKeys.get("anthropic");
       const existingOpenaiKey = storage.apiKeys.get("openai");
-<<<<<<< HEAD
       const existingXaiKey = storage.apiKeys.get("xai");
       const existingGroqKey = storage.apiKeys.get("groq");
       const existingMistralKey = storage.apiKeys.get("mistral");
@@ -145,18 +138,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
       if (existingDeepseekKey) setDeepseekKey(existingDeepseekKey);
       if (existingTogetherKey) setTogetherKey(existingTogetherKey);
       if (existingFireworksKey) setFireworksKey(existingFireworksKey);
-=======
-
-      if (existingGoogleKey) {
-        setGoogleKey(existingGoogleKey);
-      }
-      if (existingAnthropicKey) {
-        setAnthropicKey(existingAnthropicKey);
-      }
-      if (existingOpenaiKey) {
-        setOpenaiKey(existingOpenaiKey);
-      }
->>>>>>> upstream/main
 
       // Check storage health
       const healthCheck = storage.general.checkHealth();
@@ -178,7 +159,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
     initializeSettings();
   }, [initializeSettings]);
 
-<<<<<<< HEAD
   // Export window: generate .env text from decrypted keys in memory
   const handleExportEnv = useCallback(() => {
     const ENV_NAMES: Record<string, string> = {
@@ -208,8 +188,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
     toast.success("Keys locked", "Export window closed. Keys are encrypted.");
   }, [toast]);
 
-=======
->>>>>>> upstream/main
   // Handle network reconnection
   useNetworkRetry(
     useCallback(() => {
@@ -306,7 +284,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
     [handleError, toast]
   );
 
-<<<<<<< HEAD
   const handleXaiKeyChange = useCallback((value: string) => {
     try { setXaiKey(value); value.trim() ? storage.apiKeys.set("xai", value) : storage.apiKeys.remove("xai"); }
     catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
@@ -342,8 +319,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
     catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
   }, [handleError]);
 
-=======
->>>>>>> upstream/main
   // Get storage summary for display
   const storageSummary = storage.general.getSummary();
 
@@ -583,7 +558,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
                       </div>
                       <div className="min-w-0 text-xs sm:text-sm">
                         <div className="mb-1 font-medium text-green-900 dark:text-green-100">
-<<<<<<< HEAD
                           Encrypted at Rest
                         </div>
                         <div className="text-green-700 dark:text-green-300 space-y-1">
@@ -603,20 +577,11 @@ export function SettingsPage({ className }: SettingsPageProps) {
                             running on this page could in theory read the key from
                             memory at that moment.
                           </p>
-=======
-                          Secure Local Storage
-                        </div>
-                        <div className="text-green-700 dark:text-green-300">
-                          Your API keys are stored locally in your browser and
-                          are never transmitted to our servers. They remain
-                          private and secure on your device.
->>>>>>> upstream/main
                         </div>
                       </div>
                     </div>
                   </div>
 
-<<<<<<< HEAD
                   {/* Export window — only shown within 1 hour of last key edit */}
                   {exportWindowOpen && (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 dark:border-amber-800 dark:bg-amber-900/20">
@@ -670,8 +635,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
                     </div>
                   )}
 
-=======
->>>>>>> upstream/main
                   <Separator />
 
                   {/* Google AI API Key */}
@@ -720,7 +683,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
                       />
                     </SettingsErrorBoundary>
                   </Suspense>
-<<<<<<< HEAD
 
                   {/* xAI API Key */}
                   <Suspense fallback={<ComponentLoading />}>
@@ -819,8 +781,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
                       />
                     </SettingsErrorBoundary>
                   </Suspense>
-=======
->>>>>>> upstream/main
                 </CardContent>
               </Card>
             </TabsContent>

@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { ArrowLeft, ArrowRight, BookOpen, BrainCog, Check, Globe, Library, Loader2, Lock, MoreHorizontal, PanelLeft, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -16,42 +15,21 @@ import { DEFAULT_CODECHAT_GITHUB_ACCOUNT } from "@/lib/repo-wiki";
 import { storage } from "@/lib/storage";
 import { GitHubContextIntegration } from "@/lib/github-components";
 import type { GitHubRepo } from "@/lib/types";
-=======
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useSWRConfig } from "swr";
-import { unstable_serialize } from "swr/infinite";
-import { PlusIcon, TrashIcon } from "@/components/icons";
->>>>>>> upstream/main
 import {
   getChatHistoryPaginationKey,
   SidebarHistory,
 } from "@/components/sidebar-history";
-<<<<<<< HEAD
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { SidebarUserNav } from "@/components/sidebar-user-nav";
-=======
-import { SidebarUserNav } from "@/components/sidebar-user-nav";
-import { Button } from "@/components/ui/button";
->>>>>>> upstream/main
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-<<<<<<< HEAD
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth/hooks";
 import { Button } from "@/components/ui/button";
-=======
-  SidebarMenu,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { useAuth } from "@/lib/auth/hooks";
->>>>>>> upstream/main
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,7 +40,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-<<<<<<< HEAD
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -229,22 +206,6 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
 
   const handleDeleteAll = () => {
     const deletePromise = fetch("/api/history", { method: "DELETE" });
-=======
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-
-export function AppSidebar() {
-  const router = useRouter();
-  const { setOpenMobile } = useSidebar();
-  const { mutate } = useSWRConfig();
-  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
-  const { user } = useAuth();
-
-  const handleDeleteAll = () => {
-    const deletePromise = fetch("/api/history", {
-      method: "DELETE",
-    });
-
->>>>>>> upstream/main
     toast.promise(deletePromise, {
       loading: "Deleting all chats...",
       success: () => {
@@ -259,7 +220,6 @@ export function AppSidebar() {
 
   return (
     <>
-<<<<<<< HEAD
       {state === "collapsed" && !isMobile && (
         <Button
           className="fixed top-[84px] left-3 z-30 h-9 w-9 rounded-full border border-border bg-background shadow-sm"
@@ -600,74 +560,6 @@ export function AppSidebar() {
       </Sidebar>
 
       <AlertDialog onOpenChange={setShowDeleteAllDialog} open={showDeleteAllDialog}>
-=======
-      <Sidebar className="group-data-[side=left]:border-r-0">
-        <SidebarHeader>
-          <SidebarMenu>
-            <div className="flex flex-row items-center justify-between">
-              <Link
-                className="flex flex-row items-center gap-3"
-                href="/"
-                onClick={() => {
-                  setOpenMobile(false);
-                }}
-              >
-                <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
-                </span>
-              </Link>
-              <div className="flex flex-row gap-1">
-                {user && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        className="h-8 p-1 md:h-fit md:p-2"
-                        onClick={() => setShowDeleteAllDialog(true)}
-                        type="button"
-                        variant="ghost"
-                      >
-                        <TrashIcon />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent align="end" className="hidden md:block">
-                      Delete All Chats
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      className="h-8 p-1 md:h-fit md:p-2"
-                      onClick={() => {
-                        setOpenMobile(false);
-                        router.push("/chat");
-                        router.refresh();
-                      }}
-                      type="button"
-                      variant="ghost"
-                    >
-                      <PlusIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent align="end" className="hidden md:block">
-                    New Chat
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarHistory />
-        </SidebarContent>
-        <SidebarFooter>{user && <SidebarUserNav />}</SidebarFooter>
-      </Sidebar>
-
-      <AlertDialog
-        onOpenChange={setShowDeleteAllDialog}
-        open={showDeleteAllDialog}
-      >
->>>>>>> upstream/main
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete all chats?</AlertDialogTitle>
@@ -678,13 +570,7 @@ export function AppSidebar() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-<<<<<<< HEAD
             <AlertDialogAction onClick={handleDeleteAll}>Delete All</AlertDialogAction>
-=======
-            <AlertDialogAction onClick={handleDeleteAll}>
-              Delete All
-            </AlertDialogAction>
->>>>>>> upstream/main
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -18,28 +18,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-<<<<<<< HEAD
 import type { APIProvider } from "@/lib/storage/types";
 import type { VerificationResult } from "@/lib/verification/types";
 
 type APIKeySectionProps = {
   provider: APIProvider;
-=======
-import type { VerificationResult } from "@/lib/verification/types";
-
-type APIKeySectionProps = {
-  provider: "google" | "anthropic" | "openai";
->>>>>>> upstream/main
   title: string;
   description: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
-<<<<<<< HEAD
   onVerify?: (key: string) => Promise<VerificationResult>;
-=======
-  onVerify: (key: string) => Promise<VerificationResult>;
->>>>>>> upstream/main
   className?: string;
 };
 
@@ -59,11 +48,7 @@ export function APIKeySection({
     useState<VerificationResult | null>(null);
 
   const handleVerify = async () => {
-<<<<<<< HEAD
     if (!value.trim() || !onVerify) {
-=======
-    if (!value.trim()) {
->>>>>>> upstream/main
       return;
     }
 
@@ -282,11 +267,7 @@ export function APIKeySection({
           </div>
         </div>
 
-<<<<<<< HEAD
         {onVerify && <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-=======
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
->>>>>>> upstream/main
           <Button
             aria-describedby={`${provider}-verify-help`}
             className={cn(
@@ -333,11 +314,7 @@ export function APIKeySection({
               Click verify to test your API key
             </div>
           )}
-<<<<<<< HEAD
         </div>}
-=======
-        </div>
->>>>>>> upstream/main
 
         <div aria-live="polite" id={`${provider}-api-key-status`} role="status">
           {getStatusMessage()}

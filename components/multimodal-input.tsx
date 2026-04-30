@@ -33,7 +33,6 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "./elements/prompt-input";
-<<<<<<< HEAD
 import { GitHubRepoModal } from "@/lib/github-components";
 import { ArrowUpIcon, StopIcon } from "./icons";
 import { ModelSelector } from "./model-selector";
@@ -41,15 +40,6 @@ import { PreviewAttachment } from "./preview-attachment";
 import { ThinkingModeToggle } from "./thinking-mode-toggle";
 import { Button } from "./ui/button";
 import { useSidebar } from "./ui/sidebar";
-=======
-import { GitHubRepoModal, ResourceAreaSelector } from "@/lib/github-components";
-import { ArrowUpIcon, StopIcon } from "./icons";
-import { ModelSelector } from "./model-selector";
-import { PreviewAttachment } from "./preview-attachment";
-import { SuggestedActions } from "./suggested-actions";
-import { ThinkingModeToggle } from "./thinking-mode-toggle";
-import { Button } from "./ui/button";
->>>>>>> upstream/main
 import type { VisibilityType } from "./visibility-selector";
 
 function PureMultimodalInput({
@@ -69,14 +59,7 @@ function PureMultimodalInput({
   onModelChange,
   usage,
   githubPAT,
-<<<<<<< HEAD
   // ragSelectedRepos, onRagSelectedReposChange, availableRepos, availableReposLoading — moved to sidebar Sources panel
-=======
-  ragSelectedRepos,
-  onRagSelectedReposChange,
-  availableRepos,
-  availableReposLoading,
->>>>>>> upstream/main
 }: {
   chatId: string;
   input: string;
@@ -94,21 +77,11 @@ function PureMultimodalInput({
   onModelChange?: (modelId: string) => void;
   usage?: AppUsage;
   githubPAT?: string;
-<<<<<<< HEAD
   // ragSelectedRepos, onRagSelectedReposChange, availableRepos, availableReposLoading — moved to sidebar Sources panel
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
-=======
-  ragSelectedRepos?: string[];
-  onRagSelectedReposChange?: (repos: string[]) => void;
-  availableRepos?: string[];
-  availableReposLoading?: boolean;
-}) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { width } = useWindowSize();
->>>>>>> upstream/main
 
   // Thinking mode state - persists across model selections within the session
   const [thinkingMode, setThinkingMode] = useLocalStorage(
@@ -191,7 +164,6 @@ function PureMultimodalInput({
     }
   }, [selectedFolders, chatId]);
 
-<<<<<<< HEAD
   // Sync GitHub repo selections made in the sidebar
   useEffect(() => {
     const handler = (e: CustomEvent) => {
@@ -202,8 +174,6 @@ function PureMultimodalInput({
     return () => window.removeEventListener("github-selection-changed", handler as EventListener);
   }, [chatId]);
 
-=======
->>>>>>> upstream/main
   // Handle GitHub selection changes
   const handleGitHubRepoChange = useCallback((repos: GitHubRepo[]) => {
     setSelectedRepos(repos);
@@ -231,10 +201,7 @@ function PureMultimodalInput({
     modelCapabilities: adminConfig,
     isLoading: configLoading,
     error: configError,
-<<<<<<< HEAD
     dbStatus,
-=======
->>>>>>> upstream/main
   } = useModelCapabilities();
 
   // Determine current provider from selected model
@@ -307,13 +274,10 @@ function PureMultimodalInput({
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
   const submitForm = useCallback(() => {
-<<<<<<< HEAD
     if (input.trim().length === 0 && attachments.length === 0) {
       return;
     }
 
-=======
->>>>>>> upstream/main
     window.history.replaceState({}, "", `/chat/${chatId}`);
 
     // Check if thinking mode is supported and enabled
@@ -522,22 +486,7 @@ function PureMultimodalInput({
 
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
-<<<<<<< HEAD
       {/* Suggested actions removed */}
-=======
-      {messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions
-            adminConfig={adminConfig}
-            chatId={chatId}
-            selectedModelId={selectedModelId}
-            selectedProvider={selectedProvider}
-            selectedVisibilityType={selectedVisibilityType}
-            sendMessage={sendMessage}
-          />
-        )}
->>>>>>> upstream/main
 
       <input
         className="-top-4 -left-4 pointer-events-none fixed size-0.5 opacity-0"
@@ -738,10 +687,7 @@ function PureMultimodalInput({
             {/* GitHub Context Button */}
             {githubPAT && (
               <Button
-<<<<<<< HEAD
                 id="openSources"
-=======
->>>>>>> upstream/main
                 className={`aspect-square h-8 rounded-lg p-1 transition-all duration-200 ${
                   selectedRepos.length > 0 ||
                   selectedFiles.length > 0 ||
@@ -752,13 +698,9 @@ function PureMultimodalInput({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-<<<<<<< HEAD
                   if (isMobile) setOpenMobile(true);
                   else setOpen(true);
                   window.dispatchEvent(new CustomEvent("open-github-sources"));
-=======
-                  setShowGitHubModal(!showGitHubModal);
->>>>>>> upstream/main
                 }}
                 title={
                   selectedRepos.length > 0 ||
@@ -790,10 +732,7 @@ function PureMultimodalInput({
               </Button>
             )}
 
-<<<<<<< HEAD
             {/* Pre-trained Repos selector moved to sidebar Sources panel
-=======
->>>>>>> upstream/main
             {availableRepos && onRagSelectedReposChange && (
               <ResourceAreaSelector
                 availableRepos={availableRepos}
@@ -802,17 +741,11 @@ function PureMultimodalInput({
                 ragSelectedRepos={ragSelectedRepos ?? []}
               />
             )}
-<<<<<<< HEAD
             */}
 
             <ModelSelector
               adminConfig={adminConfig || undefined}
               dbStatus={dbStatus}
-=======
-
-            <ModelSelector
-              adminConfig={adminConfig || undefined}
->>>>>>> upstream/main
               error={configError}
               isLoading={configLoading}
               onModelChange={onModelChange || (() => {})}
@@ -832,11 +765,7 @@ function PureMultimodalInput({
           ) : (
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
-<<<<<<< HEAD
               disabled={(input.trim().length === 0 && attachments.length === 0) || uploadQueue.length > 0}
-=======
-              disabled={!input.trim() || uploadQueue.length > 0}
->>>>>>> upstream/main
               status={status}
             >
               <ArrowUpIcon size={14} />
@@ -884,19 +813,7 @@ export const MultimodalInput = memo(
     if (prevProps.githubPAT !== nextProps.githubPAT) {
       return false;
     }
-<<<<<<< HEAD
     // ragSelectedRepos, availableRepos, availableReposLoading — moved to sidebar Sources panel
-=======
-    if (!equal(prevProps.ragSelectedRepos, nextProps.ragSelectedRepos)) {
-      return false;
-    }
-    if (!equal(prevProps.availableRepos, nextProps.availableRepos)) {
-      return false;
-    }
-    if (prevProps.availableReposLoading !== nextProps.availableReposLoading) {
-      return false;
-    }
->>>>>>> upstream/main
 
     return true;
   }

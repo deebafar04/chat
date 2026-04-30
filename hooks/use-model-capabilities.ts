@@ -4,21 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { ErrorCategory, ErrorSeverity, logAppError } from "@/lib/errors/logger";
 import type { AdminConfigSummary } from "@/lib/types";
 
-<<<<<<< HEAD
 export type DbStatus =
   | { ok: true }
   | { ok: false; message: string; steps: string[] };
 
-=======
->>>>>>> upstream/main
 type UseModelCapabilitiesResult = {
   modelCapabilities: AdminConfigSummary | null;
   isLoading: boolean;
   error: string | null;
-<<<<<<< HEAD
   dbStatus: DbStatus | null;
-=======
->>>>>>> upstream/main
   refetch: () => void;
 };
 
@@ -27,10 +21,7 @@ export function useModelCapabilities(): UseModelCapabilitiesResult {
     useState<AdminConfigSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
-=======
->>>>>>> upstream/main
 
   const fetchModelCapabilities = useCallback(async () => {
     try {
@@ -96,10 +87,7 @@ export function useModelCapabilities(): UseModelCapabilitiesResult {
       }
 
       const data = await response.json();
-<<<<<<< HEAD
       setDbStatus(data.dbStatus ?? null);
-=======
->>>>>>> upstream/main
       // Extract capabilities from the consolidated response
       setModelCapabilities(data.capabilities);
     } catch (err) {
@@ -148,10 +136,7 @@ export function useModelCapabilities(): UseModelCapabilitiesResult {
 
       setError(errorMessage);
       setModelCapabilities(null);
-<<<<<<< HEAD
       setDbStatus(null);
-=======
->>>>>>> upstream/main
     } finally {
       setIsLoading(false);
     }
@@ -169,10 +154,7 @@ export function useModelCapabilities(): UseModelCapabilitiesResult {
     modelCapabilities,
     isLoading,
     error,
-<<<<<<< HEAD
     dbStatus,
-=======
->>>>>>> upstream/main
     refetch,
   };
 }

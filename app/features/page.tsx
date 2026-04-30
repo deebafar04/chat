@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
 import { SiteFooter } from "@/components/site-footer";
-=======
->>>>>>> upstream/main
 import {
     Sparkles,
     Zap,
@@ -28,11 +25,7 @@ export default function FeaturesPage() {
     const mainFeatures = [
         {
             icon: MessageSquare,
-<<<<<<< HEAD
             title: "Flexible AI Integrations",
-=======
-            title: "Advanced AI Conversations",
->>>>>>> upstream/main
             description: "Engage with cutting-edge language models including GPT-4, Claude, and Gemini. Experience natural, context-aware conversations that understand nuance and maintain coherent dialogue across multiple turns.",
             gradient: "from-purple-500 to-pink-500",
             highlights: [
@@ -140,7 +133,6 @@ export default function FeaturesPage() {
 
     return (
         <div className="min-h-screen bg-background">
-<<<<<<< HEAD
             {/* Hero Section */}
             <section className="px-4 pt-4 pb-8">
                 <div className="container mx-auto text-center">
@@ -149,42 +141,6 @@ export default function FeaturesPage() {
                             Core Features
                         </h1>
                         <p className="mx-auto max-w-3xl text-muted-foreground text-xl leading-relaxed">
-=======
-            {/* Navigation */}
-            <nav className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-md">
-                <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                    <Link href="/" className="font-bold text-xl hover:opacity-80 transition-opacity">
-                        AI Chatbot
-                    </Link>
-                    <div className="flex gap-2">
-                        <Button asChild variant="ghost">
-                            <Link href="/">Home</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/agents">Agents</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/faq">FAQ</Link>
-                        </Button>
-                        <Button asChild variant="ghost">
-                            <Link href="/login">Sign In</Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href="/register">Sign Up</Link>
-                        </Button>
-                    </div>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <section className="px-4 pt-32 pb-20">
-                <div className="container mx-auto text-center">
-                    <div className="animate-fade-in-up">
-                        <h1 className="mb-6 font-bold text-5xl md:text-7xl bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-                            Powerful Features
-                        </h1>
-                        <p className="mx-auto mb-8 max-w-3xl text-muted-foreground text-xl leading-relaxed">
->>>>>>> upstream/main
                             Discover the comprehensive suite of AI-powered tools and capabilities
                             designed to supercharge your productivity and creativity.
                         </p>
@@ -195,18 +151,6 @@ export default function FeaturesPage() {
             {/* Main Features - Prominent Section */}
             <section className="px-4 py-16">
                 <div className="container mx-auto">
-<<<<<<< HEAD
-=======
-                    <div className="text-center mb-16">
-                        <h2 className="mb-4 font-bold text-4xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Core Capabilities
-                        </h2>
-                        <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
-                            Our most powerful features that set us apart
-                        </p>
-                    </div>
-
->>>>>>> upstream/main
                     <div className="space-y-16">
                         {mainFeatures.map((feature, index) => {
                             const Icon = feature.icon;
@@ -316,18 +260,6 @@ export default function FeaturesPage() {
             {/* Upcoming Features */}
             <section className="px-4 py-20">
                 <div className="container mx-auto">
-<<<<<<< HEAD
-=======
-                    <div className="text-center mb-16">
-                        <h2 className="mb-4 font-bold text-4xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Coming Soon
-                        </h2>
-                        <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
-                            Exciting new features on the horizon
-                        </p>
-                    </div>
-
->>>>>>> upstream/main
                     <div className="max-w-2xl mx-auto">
                         {upcomingFeatures.map((feature, index) => {
                             const Icon = feature.icon;
@@ -373,15 +305,9 @@ export default function FeaturesPage() {
                             </p>
                             <div className="flex justify-center gap-4">
                                 <Button asChild size="lg" variant="secondary">
-<<<<<<< HEAD
                                     <Link href="/chat">Start Chat</Link>
                                 </Button>
                                 <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-white/90">
-=======
-                                    <Link href="/register">Start Free</Link>
-                                </Button>
-                                <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
->>>>>>> upstream/main
                                     <Link href="/agents">Explore Agents</Link>
                                 </Button>
                             </div>
@@ -390,16 +316,7 @@ export default function FeaturesPage() {
                 </div>
             </section>
 
-<<<<<<< HEAD
             <SiteFooter />
-=======
-            {/* Footer */}
-            <footer className="border-t px-4 py-8">
-                <div className="container mx-auto text-center text-muted-foreground">
-                    <p>&copy; 2026 DreamStudio Earth &ndash; CodeChat RAG addition to [Vercel Starter](https://model.earth/chat/).</p>
-                </div>
-            </footer>
->>>>>>> upstream/main
         </div>
     );
 }
