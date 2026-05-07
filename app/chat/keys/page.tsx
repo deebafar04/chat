@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 export default function KeysPage() {
   const [serverKeys, setServerKeys] = useState<string[]>([]);
   const [browserKeyProviders, setBrowserKeyProviders] = useState<string[]>([]);
+  const [hideGeminiStarter, setHideGeminiStarter] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -39,6 +40,20 @@ export default function KeysPage() {
     } catch {}
   }, []);
 
+  useEffect(() => {
+    function handleProviderValidation(event: Event) {
+      const detail = (event as CustomEvent<{ providerId?: string; valid?: boolean }>).detail;
+      if (detail?.providerId === "google" && detail.valid === true) {
+        setHideGeminiStarter(true);
+      }
+    }
+
+    window.addEventListener("keymanager:provider-validation", handleProviderValidation);
+    return () => {
+      window.removeEventListener("keymanager:provider-validation", handleProviderValidation);
+    };
+  }, []);
+
   function initWidget() {
     if (!loaded) return;
     const root = document.getElementById("key-root");
@@ -55,7 +70,7 @@ export default function KeysPage() {
 
   const isVercel = !!process.env.NEXT_PUBLIC_VERCEL_ENV;
   const noServerKeys = serverKeys.length === 0;
-  const noKeys = noServerKeys && browserKeyProviders.length === 0;
+  const noKeys = noServerKeys && browserKeyProviders.length === 0 && !hideGeminiStarter;
 
   return (
     <>
@@ -65,8 +80,8 @@ export default function KeysPage() {
           <p>Add your API keys to unlock AI models and Github integration.</p>
 
           {noKeys && (
-            <p style={{ marginTop: "10px", fontSize: "0.9rem" }}>
-              Get yourself a{" "}
+            <p id="gemini-starter-copy" style={{ marginTop: "10px", marginBottom: "12px", fontSize: "0.9rem" }}>
+              You can start with a{" "}
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"

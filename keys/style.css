@@ -266,6 +266,25 @@
 .key-status-msg.ok  { color: var(--key-success); }
 .key-status-msg.err { color: var(--key-danger); }
 
+.key-status-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 0 6px;
+  color: var(--key-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.key-status-link:hover {
+  color: var(--key-accent-hover);
+}
+
+.key-status-link-danger {
+  color: var(--key-danger);
+}
+
 /* Model list */
 .key-model-list {
   display: flex;
@@ -297,8 +316,20 @@
   transition: color 0.15s;
 }
 
+.key-edit-key-btn[hidden] {
+  display: none !important;
+}
+
 .key-edit-key-btn:hover {
   color: var(--key-accent);
+}
+
+.key-edit-key-btn.invalid {
+  color: var(--key-danger);
+}
+
+.key-edit-key-btn.invalid:hover {
+  color: var(--key-danger);
 }
 
 .key-edit-key-btn .material-icons {
@@ -360,21 +391,18 @@
 
 /* Security notice */
 .key-notice {
-  font-size: 0.78rem;
   color: var(--key-text-muted);
   border-top: 1px solid var(--key-border);
   padding-top: 16px;
   margin-top: 8px;
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  margin-bottom: 12px;
   line-height: 1.5;
 }
 
 .key-notice .material-icons {
-  flex-shrink: 0;
   font-size: 16px;
   color: var(--key-text-muted);
   line-height: 1;
-  margin-top: 0.15em;
+  margin-right: 6px;
+  vertical-align: text-top;
 }

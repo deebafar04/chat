@@ -100,6 +100,40 @@
   var _validatedKeys = new Set();
   var _invalidKeys = new Set();
 
+  function _emitProviderValidation(providerId, isValid) {
+    try {
+      window.dispatchEvent(new CustomEvent('keymanager:provider-validation', {
+        detail: { providerId: providerId, valid: isValid }
+      }));
+    } catch (_) {}
+  }
+
+  function _hideGeminiStarterNotice() {
+    ['gemini-starter-notice', 'gemini-starter-copy'].forEach(function (id) {
+      var notice = document.getElementById(id);
+      if (!notice) return;
+      if (typeof notice.remove === 'function') {
+        notice.remove();
+      } else {
+        notice.style.display = 'none';
+        notice.textContent = '';
+      }
+    });
+
+    var notices = document.querySelectorAll('.key-notice');
+    notices.forEach(function (notice) {
+      var text = (notice.textContent || '').trim();
+      if (text.indexOf('You can start with a free Google Gemini key from') !== -1) {
+        if (typeof notice.remove === 'function') {
+          notice.remove();
+        } else {
+          notice.style.display = 'none';
+          notice.textContent = '';
+        }
+      }
+    });
+  }
+
   function _loadServerKeys() {
     return fetch(SERVER_KEYS_URL)
       .then(function (r) { return r.json(); })
@@ -385,9 +419,15 @@
         if (data.valid === true) {
           _validatedKeys.add(providerId);
           _invalidKeys.delete(providerId);
+          _emitProviderValidation(providerId, true);
+          if (providerId === 'google') {
+            _hideGeminiStarterNotice();
+            setTimeout(_hideGeminiStarterNotice, 0);
+          }
         } else if (data.valid === false) {
           _invalidKeys.add(providerId);
           _validatedKeys.delete(providerId);
+          _emitProviderValidation(providerId, false);
         }
         // data.valid === null means unknown — leave as pending (orange)
         _refreshStatusIcon(providerId);
@@ -464,12 +504,12 @@
 
   function buildGeminiStarterNotice() {
     var notice = document.createElement('div');
+    notice.id = 'gemini-starter-notice';
     notice.className = 'key-notice';
     notice.innerHTML =
       ICON_INFO +
-      ' Start with a free Google Gemini key from ' +
-      '<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>' +
-      '. Add that key first when no other model keys are set.';
+      ' You can start with a free Google Gemini key from ' +
+      '<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>.';
     return notice;
   }
 
@@ -606,11 +646,53 @@
       _refreshStatusIcon(provider.id);
     }
 
+    function clearStatus() {
+      statusMsg.textContent = '';
+      statusMsg.className = 'key-status-msg';
+    }
+
+    function refreshEditKeyVisibility() {
+      if (!editKeyBtn) return;
+      editKeyBtn.hidden = !keyRow.hidden || !hasKey(provider.id);
+      editKeyBtn.classList.toggle('invalid', _invalidKeys.has(provider.id));
+    }
+
+    function showDeleteKeyStatus() {
+      if (!hasKey(provider.id)) {
+        clearStatus();
+        return;
+      }
+
+      statusMsg.className = 'key-status-msg ok';
+      statusMsg.innerHTML =
+        'The ' + provider.name + ' key is encrypted in your browser storage. ' +
+        '<button type="button" class="key-status-link key-status-link-danger">Delete key</button>';
+
+      var deleteBtn = statusMsg.querySelector('.key-status-link-danger');
+      if (!deleteBtn) return;
+
+      deleteBtn.addEventListener('click', function () {
+        removeKey(provider.id);
+        _validatedKeys.delete(provider.id);
+        _invalidKeys.delete(provider.id);
+        getKeyLink.textContent = 'Get key ↗';
+        clearStatus();
+        setKeyRowOpen(true);
+        refreshHeaderStatus();
+        refreshEditKeyVisibility();
+        showStatus(statusMsg, provider.name + ' key deleted from this browser.', 'ok');
+      });
+
+      setTimeout(function () {
+        if (statusMsg.contains(deleteBtn)) {
+          statusMsg.textContent = '';
+        }
+      }, 6000);
+    }
+
     function setKeyRowOpen(isOpen) {
       keyRow.hidden = !isOpen;
-      if (editKeyBtn) {
-        editKeyBtn.hidden = isOpen;
-      }
+      refreshEditKeyVisibility();
       if (isOpen) {
         input.focus();
       } else {
@@ -627,6 +709,7 @@
         showStatus(statusMsg, 'Key removed.', 'ok');
         getKeyLink.textContent = 'Get key ↗';
         refreshHeaderStatus();
+        refreshEditKeyVisibility();
         return;
       }
       setKey(provider.id, val);
@@ -635,6 +718,7 @@
       showStatus(statusMsg, 'Key saved. Validating…', 'ok');
       getKeyLink.textContent = 'Get new key ↗';
       refreshHeaderStatus();
+      refreshEditKeyVisibility();
       _validateKey(provider.id, val);
     }
 
@@ -680,9 +764,14 @@
       editKeyBtn.innerHTML = mi('key');
       editKeyBtn.title = 'Key is encrypted in browser storage';
       editKeyBtn.addEventListener('click', function () {
-        showStatus(statusMsg, 'The ' + provider.name + ' key is encrypted in your browser storage.', 'ok');
+        if (_invalidKeys.has(provider.id)) {
+          setKeyRowOpen(true);
+          showStatus(statusMsg, 'The ' + provider.name + ' key did not validate. Replace it or clear it.', 'err');
+          return;
+        }
+        showDeleteKeyStatus();
       });
-      editKeyBtn.hidden = !keyRow.hidden;
+      refreshEditKeyVisibility();
 
       modelLabelRow.appendChild(modelLabelText);
       modelLabelRow.appendChild(editKeyBtn);
