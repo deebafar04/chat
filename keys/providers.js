@@ -114,3 +114,31 @@ window.KeyManagerProviders = [
     models: [],
   },
 ];
+
+// CLI providers — shown only on localhost (no API key required)
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  window.KeyManagerProviders.push(
+    {
+      id: 'claude-code-cli',
+      name: 'Claude Code CLI',
+      keyPlaceholder: '',
+      keyHint: 'Local CLI — no API key required',
+      getKeyUrl: 'https://claude.ai/download',
+      cliOnly: true,
+      models: [
+        { id: 'claude-code', name: 'Claude Code', description: 'Claude Code CLI running locally', isDefault: true, active: true },
+      ],
+    },
+    {
+      id: 'codex-cli',
+      name: 'Codex CLI',
+      keyPlaceholder: '',
+      keyHint: 'Local CLI — no API key required',
+      getKeyUrl: 'https://github.com/openai/codex',
+      cliOnly: true,
+      models: [
+        { id: 'codex', name: 'OpenAI Codex', description: 'OpenAI Codex CLI running locally', isDefault: true, active: true },
+      ],
+    }
+  );
+}

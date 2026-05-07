@@ -544,6 +544,10 @@
 
     var statusIcon = document.createElement('span');
     _updateStatusIcon(statusIcon, provider.id);
+    if (provider.cliOnly) {
+      statusIcon.className = 'key-status-icon cli-provider';
+      statusIcon.innerHTML = mi('terminal');
+    }
 
     var name = document.createElement('span');
     name.className = 'key-provider-name';
@@ -577,6 +581,47 @@
     var body = document.createElement('div');
     body.className = 'key-provider-body';
     body.hidden = !startOpen;
+
+    if (provider.cliOnly) {
+      var cliInfo = document.createElement('div');
+      cliInfo.className = 'key-cli-info';
+      cliInfo.innerHTML = ICON_INFO + ' Available via local CLI &mdash; no API key required. ' +
+        '<a href="' + escapeAttr(provider.getKeyUrl) + '" target="_blank" rel="noopener">Install ↗</a>';
+      body.appendChild(cliInfo);
+
+      if (provider.models.length > 0) {
+        var cliModelSection = document.createElement('div');
+        cliModelSection.className = 'key-model-list';
+        var cliLabelRow = document.createElement('div');
+        cliLabelRow.className = 'key-model-list-label';
+        var cliLabelText = document.createElement('span');
+        cliLabelText.textContent = 'Models';
+        cliLabelRow.appendChild(cliLabelText);
+        cliModelSection.appendChild(cliLabelRow);
+        provider.models.forEach(function (model) {
+          var row = document.createElement('div');
+          row.className = 'key-model-row' + (model.active ? '' : ' inactive');
+          var nameEl = document.createElement('span');
+          nameEl.className = 'key-model-name';
+          nameEl.textContent = model.name;
+          var descEl = document.createElement('span');
+          descEl.className = 'key-model-desc';
+          descEl.textContent = model.description;
+          row.appendChild(nameEl);
+          if (model.isDefault) {
+            var badge = document.createElement('span');
+            badge.className = 'key-model-badge';
+            badge.textContent = 'default';
+            row.appendChild(badge);
+          }
+          row.appendChild(descEl);
+          cliModelSection.appendChild(row);
+        });
+        body.appendChild(cliModelSection);
+      }
+
+      return body;
+    }
 
     var browserKeyPresent = hasKey(provider.id);
     var keyPresent = browserKeyPresent || _serverKeys.has(provider.id);

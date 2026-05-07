@@ -34,6 +34,7 @@
       modelCapabilities: null,
       dbStatus: null,
       serverKeys: [],
+      serverOffline: false,
       selectedProviderId: "google",
       modelMenuOpen: false,
       contextOpen: false,
@@ -64,6 +65,7 @@
   StaticPromptWidget.prototype.renderShell = function () {
     this.container.classList.add("sp-widget");
     this.container.innerHTML = [
+      '<div class="sp-server-notice" data-role="server-notice" hidden></div>',
       '<form class="sp-prompt-form" novalidate>',
       '  <input class="sp-hidden-input" type="file" multiple>',
       '  <div class="sp-prompt-shell">',
@@ -92,6 +94,7 @@
     ].join("");
 
     this.els = {
+      serverNotice: this.container.querySelector('[data-role="server-notice"]'),
       form: this.container.querySelector(".sp-prompt-form"),
       fileInput: this.container.querySelector(".sp-hidden-input"),
       textarea: this.container.querySelector(".sp-textarea"),
@@ -197,7 +200,16 @@
       this.state.dbStatus = data.dbStatus || null;
       this.ensureSelectedModel();
     } catch (error) {
-      this.setStatus("Model capabilities unavailable.", "error");
+      if (error instanceof TypeError) {
+        this.state.serverOffline = true;
+      }
+      var fallback = buildCapabilitiesFromProviders();
+      if (fallback) {
+        this.state.modelCapabilities = fallback;
+        this.ensureSelectedModel();
+      } else {
+        this.setStatus("Model capabilities unavailable.", "error");
+      }
     }
   };
 
@@ -259,7 +271,22 @@
     }
   };
 
+  StaticPromptWidget.prototype.renderOfflineNotice = function () {
+    var el = this.els.serverNotice;
+    if (!el) return;
+    if (!this.state.serverOffline) {
+      el.hidden = true;
+      return;
+    }
+    var base = this.options.apiBase || "localhost:8888";
+    var host = base.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    el.hidden = false;
+    el.innerHTML = svgAlertCircle(14) +
+      "<span>Local server not running on <code>" + escapeHtml(host) + "</code> &mdash; using local model configuration.</span>";
+  };
+
   StaticPromptWidget.prototype.render = function () {
+    this.renderOfflineNotice();
     this.renderIcons();
     this.renderAttachments();
     this.renderGitHubContext();
@@ -401,10 +428,11 @@
     this.els.modelMenu.innerHTML = groups.map(function (group) {
       var hasBrowserKey = getConfiguredProviders().indexOf(group.providerId) >= 0;
       var hasServerKey = self.state.serverKeys.indexOf(group.providerId) >= 0;
-      var hasKey = hasBrowserKey || hasServerKey;
+      var isCli = isCliProvider(group.providerId);
+      var hasKey = hasBrowserKey || hasServerKey || isCli;
       var providerRows = group.models.map(function (model) {
         var selected = model.id === self.state.selectedModelId;
-        var meta = !hasKey ? "Add key to use" : (hasServerKey && !hasBrowserKey ? "Available via server .env" : model.description);
+        var meta = !hasKey ? "Add key to use" : (isCli ? "Available via local CLI" : (hasServerKey && !hasBrowserKey ? "Available via server .env" : model.description));
         return [
           '<button class="sp-model-option' + (hasKey ? "" : " is-disabled") + '" data-select-model="' + escapeAttr(model.id) + '" data-provider-id="' + escapeAttr(group.providerId) + '" type="button">',
           '  <div class="sp-model-option-row">',
@@ -421,7 +449,7 @@
       return [
         '<div class="sp-model-provider-group">',
         '  <div class="sp-model-provider-header">',
-        hasBrowserKey ? svgCheckCircle(13) : (hasServerKey ? svgServerKey(13) : svgLock(13)),
+        hasBrowserKey ? svgCheckCircle(13) : (isCli ? svgTerminal(13) : (hasServerKey ? svgServerKey(13) : svgLock(13))),
         '    <span>' + escapeHtml(group.providerName) + "</span>",
         '    <span>' + group.models.length + " model" + (group.models.length === 1 ? "" : "s") + "</span>",
         "  </div>",
@@ -482,7 +510,7 @@
   StaticPromptWidget.prototype.selectModel = function (modelId, providerId) {
     var hasBrowserKey = getConfiguredProviders().indexOf(providerId) >= 0;
     var hasServerKey = this.state.serverKeys.indexOf(providerId) >= 0;
-    if (!hasBrowserKey && !hasServerKey) {
+    if (!hasBrowserKey && !hasServerKey && !isCliProvider(providerId)) {
       if (this.options.onOpenSettings) {
         this.options.onOpenSettings(providerId, modelId);
       } else if (this.options.settingsUrl) {
@@ -1128,7 +1156,7 @@
       });
       groups.push({
         providerId: providerId,
-        providerName: providerId.charAt(0).toUpperCase() + providerId.slice(1),
+        providerName: getProviderName(providerId),
         models: models
       });
     });
@@ -1361,8 +1389,55 @@
     return '<svg height="' + size + '" viewBox="0 0 24 24" width="' + size + '" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10V7a5 5 0 0 1 10 0v3"></path><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M12 13v4"></path></svg>';
   }
 
+  function svgTerminal(size) {
+    return '<svg height="' + size + '" viewBox="0 0 24 24" width="' + size + '" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>';
+  }
+
+  function svgAlertCircle(size) {
+    return '<svg height="' + size + '" viewBox="0 0 24 24" width="' + size + '" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+  }
+
   function githubMark() {
     return '<svg fill="currentColor" height="14" viewBox="0 0 24 24" width="14"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.303 3.438 9.801 8.207 11.387.6.111.793-.261.793-.577v-2.234c-3.338.727-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.763-1.605-2.665-.304-5.467-1.333-5.467-5.93 0-1.311.468-2.381 1.236-3.221-.125-.304-.536-1.525.116-3.176 0 0 1.009-.323 3.301 1.23A11.487 11.487 0 0 1 12 5.8c1.02.005 2.047.138 3.006.404 2.291-1.553 3.297-1.23 3.297-1.23.653 1.651.242 2.872.118 3.176.769.84 1.234 1.91 1.234 3.221 0 4.609-2.807 5.624-5.48 5.921.43.372.823 1.103.823 2.222v3.293c0 .319.192.694.801.576C20.565 21.798 24 17.301 24 12 24 5.373 18.627 0 12 0Z"></path></svg>';
+  }
+
+  function buildCapabilitiesFromProviders() {
+    var providers = window.KeyManagerProviders || [];
+    if (!providers.length) return null;
+    var result = { providers: {} };
+    providers.forEach(function (provider) {
+      if (!provider.models || !provider.models.length) return;
+      var models = {};
+      provider.models.filter(function (m) { return m.active !== false; }).forEach(function (model) {
+        models[model.id] = {
+          name: model.name,
+          description: model.description || '',
+          isDefault: !!model.isDefault,
+          supportsThinkingMode: !!model.supportsThinkingMode
+        };
+      });
+      if (!Object.keys(models).length) return;
+      result.providers[provider.id] = {
+        enabled: true,
+        fileInputEnabled: !provider.cliOnly,
+        allowedFileTypes: [],
+        models: models
+      };
+    });
+    return Object.keys(result.providers).length ? result : null;
+  }
+
+  function isCliProvider(providerId) {
+    var providers = window.KeyManagerProviders || [];
+    return providers.some(function (p) { return p.id === providerId && p.cliOnly; });
+  }
+
+  function getProviderName(providerId) {
+    var providers = window.KeyManagerProviders || [];
+    for (var i = 0; i < providers.length; i++) {
+      if (providers[i].id === providerId) return providers[i].name;
+    }
+    return providerId.charAt(0).toUpperCase() + providerId.slice(1);
   }
 
   function githubMarkSmall() {

@@ -118,11 +118,36 @@ body {
   color: var(--sp-text);
 }
 
+.sp-server-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(183, 106, 16, 0.08);
+  border: 1px solid rgba(183, 106, 16, 0.22);
+  color: var(--sp-warn);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.sp-server-notice[hidden] {
+  display: none;
+}
+
+.sp-server-notice code {
+  font-family: monospace;
+  background: rgba(183, 106, 16, 0.14);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
 .sp-prompt-shell {
   background: var(--sp-panel-strong);
   border-radius: 22px;
   box-shadow: inset 0 0 0 1px var(--sp-line), 0 12px 32px rgba(15, 23, 42, 0.06);
-  overflow: hidden;
 }
 
 .sp-prompt-form {

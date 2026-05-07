@@ -389,6 +389,34 @@
   font-style: italic;
 }
 
+/* CLI provider info */
+.key-cli-info {
+  font-size: 0.825rem;
+  color: var(--key-text-muted);
+  line-height: 1.5;
+}
+
+.key-cli-info .material-icons {
+  font-size: 16px;
+  color: var(--key-accent);
+  line-height: 1;
+  margin-right: 6px;
+  vertical-align: text-top;
+}
+
+.key-cli-info a {
+  color: var(--key-accent);
+  text-decoration: none;
+}
+
+.key-cli-info a:hover {
+  text-decoration: underline;
+}
+
+.key-status-icon.cli-provider .material-icons {
+  color: var(--key-accent);
+}
+
 /* Security notice */
 .key-notice {
   color: var(--key-text-muted);
