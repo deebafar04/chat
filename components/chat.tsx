@@ -32,6 +32,7 @@ import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { RagTimingPanel } from "./rag-timing-panel";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "sonner";
 import type { VisibilityType } from "./visibility-selector";
@@ -66,6 +67,12 @@ export function Chat({
   const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
   const [ragSkippedReason, setRagSkippedReason] = useState<string | null>(null);
+  const [timingData, setTimingData] = useState<{
+    ragStartMs?: number;
+    ragEndMs?: number;
+    llmRequestMs?: number;
+    ragSourceCount?: number;
+  } | null>(null);
   const [currentModelId, setCurrentModelId] = useState(initialChatModel);
   const currentModelIdRef = useRef(currentModelId);
 
@@ -194,6 +201,16 @@ export function Chat({
         const reason = (dataPart.data as { skippedReason?: string } | null)
           ?.skippedReason ?? null;
         setRagSkippedReason(reason);
+      }
+      if (dataPart.type === "data-timing") {
+        setTimingData(
+          (dataPart.data as {
+            ragStartMs?: number;
+            ragEndMs?: number;
+            llmRequestMs?: number;
+            ragSourceCount?: number;
+          } | null) ?? null
+        );
       }
     },
     onFinish: () => {
@@ -358,6 +375,13 @@ export function Chat({
     },
   });
 
+  // Clear timing panel when a new request starts
+  useEffect(() => {
+    if (status === "submitted") {
+      setTimingData(null);
+    }
+  }, [status]);
+
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
   const dataParam = searchParams.get("data");
@@ -521,6 +545,8 @@ export function Chat({
             </div>
           </div>
         )}
+
+        {timingData && <RagTimingPanel timing={timingData} />}
 
         <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
           {!isReadonly && (

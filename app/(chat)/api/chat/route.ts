@@ -68,6 +68,8 @@ export async function POST(request: Request) {
   let dbAvailable = true;
 
   try {
+    const t0 = Date.now();
+
     const {
       id,
       message,
@@ -195,6 +197,7 @@ export async function POST(request: Request) {
       }
     }
 
+    const ragStartMs = ragDisabled ? undefined : Date.now() - t0;
     const ragContextResult = ragDisabled
       ? {
           context: "",
@@ -209,6 +212,7 @@ export async function POST(request: Request) {
           pineconeApiKey: pineconeApiKeyOverride,
           voyageApiKey: voyageApiKeyOverride,
         });
+    const ragEndMs = ragDisabled ? undefined : Date.now() - t0;
 
     const ragContext = ragContextResult.context;
 
@@ -416,6 +420,12 @@ export async function POST(request: Request) {
       ragStatus: {
         skippedReason: ragContextResult.skippedReason,
         sourceCount: ragContextResult.sourceCount,
+      },
+      timingData: {
+        t0,
+        ragStartMs,
+        ragEndMs,
+        ragSourceCount: ragContextResult.sourceCount,
       },
       onFinish: async ({ messages }) => {
         // Save all assistant messages to database

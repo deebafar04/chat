@@ -205,6 +205,12 @@ export type ChatParams = {
       | "error";
     sourceCount?: number;
   };
+  timingData?: {
+    t0: number;
+    ragStartMs?: number;
+    ragEndMs?: number;
+    ragSourceCount?: number;
+  };
 };
 
 /**

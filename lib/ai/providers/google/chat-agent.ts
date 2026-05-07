@@ -226,6 +226,19 @@ export class GoogleChatAgent {
             });
           }
 
+          if (params.timingData) {
+            dataStream.write({
+              type: "data-timing",
+              data: {
+                ragStartMs: params.timingData.ragStartMs,
+                ragEndMs: params.timingData.ragEndMs,
+                ragSourceCount: params.timingData.ragSourceCount,
+                llmRequestMs: Date.now() - params.timingData.t0,
+              },
+              transient: true,
+            });
+          }
+
           // Use streamText directly with Google model from chat agent
           const model = this.getModel(params.modelId);
 

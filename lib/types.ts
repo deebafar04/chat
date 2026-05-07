@@ -30,8 +30,16 @@ export type CustomUIDataTypes = {
       | "empty_query"
       | "missing_credentials"
       | "no_matches"
+      | "index_not_found"
+      | "unauthorized"
       | "error";
     sourceCount?: number;
+  } | null;
+  timing: {
+    ragStartMs?: number;
+    ragEndMs?: number;
+    llmRequestMs?: number;
+    ragSourceCount?: number;
   } | null;
 };
 
