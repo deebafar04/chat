@@ -19,11 +19,12 @@ It lives inside the webroot container at `webroot/chat/` alongside static-file r
 
 ### Unified server (recommended for webroot development)
 
-`chat/server.mjs` is a custom Node.js server that boots Next.js **and** serves the sibling webroot static repos from a single port — no separate Python server needed.
+`chat/server.mjs` is a custom Node.js server that boots the chat Next.js app, prepares a chat-owned runtime copy of the `sanity/` submodule, starts that mounted Sanity Next.js site, and serves sibling webroot static repos from a single port — no separate Python server needed.
 
 ```bash
 # 1. Install dependencies (first time only, or after pulling new commits)
 pnpm --prefix chat install
+bun --cwd sanity install
 
 # 2. Start the unified server from the webroot root:
 node chat/server.mjs               # → http://localhost:8888
@@ -34,6 +35,7 @@ pnpm --prefix chat dev:webroot
 ```
 
 The server loads `docker/.env` automatically from the webroot root before booting Next.js.
+When `sanity/` is present, it prepares a derived runtime copy outside the submodule, starts the Sanity Next.js dev server on an internal port, and mounts it at `/sanity` on the same public host.
 
 #### URL layout on the unified server
 
@@ -46,15 +48,17 @@ The **chat app occupies the root** — no path prefix:
 | `localhost:8888/chat/[id]` | a conversation |
 | `localhost:8888/settings` | settings |
 | `localhost:8888/chat/keys/` | standalone key manager widget |
+| `localhost:8888/sanity/` | Sanity frontend |
+| `localhost:8888/sanity/admin` | Sanity Studio |
 | `localhost:8888/localsite/…` | `localsite/` static files |
 | `localhost:8888/team/…` | `team/` static files |
 | `localhost:8888/requests/…` | `requests/` static files |
 
-Static repo paths (`/localsite/`, `/team/`, `/requests/`, `/realitystream/`, `/data-pipeline/`, `/home/`) are served directly from the filesystem before Next.js sees the request. Everything else goes to Next.js.
+Static repo paths (`/localsite/`, `/team/`, `/requests/`, `/realitystream/`, `/data-pipeline/`, `/home/`) are served directly from the filesystem before Next.js sees the request. `/sanity/*` is proxied to the Sanity Next.js app, and everything else goes to chat Next.js.
 
 #### Why port 8888?
 
-Port 3000 stays free for the plain `pnpm dev` (Turbopack) workflow. Port 8887 is the existing Python static server. 8888 is the unified server default; set `PORT=8887` to replace the Python server entirely.
+Port 3000 is used internally by the mounted Sanity dev server when you run `node chat/server.mjs`. Port 8887 is the existing Python static server. 8888 is the unified server default; set `PORT=8887` to replace the Python server entirely.
 
 ### Chat-only development (fastest)
 
@@ -100,7 +104,7 @@ nohup node chat/server.mjs > /tmp/chat-dev.log 2>&1 &
 nohup pnpm --prefix chat dev > /tmp/chat-dev.log 2>&1 &
 ```
 
-Check if already running: `lsof -ti:3000`
+Check if already running: `lsof -ti:8888`
 
 ---
 
