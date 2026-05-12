@@ -114,7 +114,7 @@ class ResourceAreaSelectorElement extends HTMLElement {
     if (!this._root) return;
     this._root.render(
       React.createElement(ResourceAreaSelector, {
-        availableRepos: this._availableRepos,
+        availableRepos: this._availableRepos.map((name) => ({ name, label: name })),
         ragSelectedRepos: this._selectedRepos,
         isLoading: this._isLoading,
         onRagSelectedReposChange: this._handleChange,
