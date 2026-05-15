@@ -786,6 +786,12 @@
     inputWrap.appendChild(saveBtn);
     inputWrap.appendChild(clearBtn);
 
+    if (provider.keyHint) {
+      var hintEl = document.createElement('div');
+      hintEl.className = 'key-key-hint';
+      hintEl.textContent = provider.keyHint;
+      keyRow.appendChild(hintEl);
+    }
     keyRow.appendChild(label);
     keyRow.appendChild(inputWrap);
     body.appendChild(keyRow);
