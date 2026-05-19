@@ -308,6 +308,7 @@
 
   var ENV_TO_PROVIDER = {
     GEMINI_API_KEY:                'google',
+    GOOGLE_API_KEY:                'google',
     ANTHROPIC_API_KEY:             'anthropic',
     OPENAI_API_KEY:                'openai',
     XAI_API_KEY:                   'xai',
@@ -319,7 +320,28 @@
     DEEPSEEK_API_KEY:              'deepseek',
     DISCORD_BOT_TOKEN:             'discord',
     GITHUB_PERSONAL_ACCESS_TOKEN:  'github',
+    PINECONE_API_KEY:              'pinecone',
+    VOYAGE_API_KEY:                'voyage',
   };
+
+  var PROVIDER_TO_ENV = {
+    google:     'GOOGLE_API_KEY',
+    anthropic:  'ANTHROPIC_API_KEY',
+    openai:     'OPENAI_API_KEY',
+    xai:        'XAI_API_KEY',
+    groq:       'GROQ_API_KEY',
+    together:   'TOGETHER_API_KEY',
+    fireworks:  'FIREWORKS_API_KEY',
+    mistral:    'MISTRAL_API_KEY',
+    perplexity: 'PERPLEXITY_API_KEY',
+    deepseek:   'DEEPSEEK_API_KEY',
+    discord:    'DISCORD_BOT_TOKEN',
+    github:     'GITHUB_PERSONAL_ACCESS_TOKEN',
+    pinecone:   'PINECONE_API_KEY',
+    voyage:     'VOYAGE_API_KEY',
+  };
+
+  var COPY_PREF_KEY = 'settings_copymykeys';
 
   var LEGACY_KEY_TO_PROVIDER = {
     gemini_api_key:   'google',
@@ -437,6 +459,235 @@
       });
   }
 
+  // ── Paste Keys ───────────────────────────────────────────────────────────────
+
+  function buildPastePanel(onApplied) {
+    var panel = document.createElement('div');
+    panel.className = 'key-paste-panel';
+    panel.hidden = true;
+
+    var title = document.createElement('div');
+    title.className = 'key-paste-title';
+    title.textContent = 'Paste from .env file';
+
+    var hint = document.createElement('p');
+    hint.className = 'key-paste-hint';
+    hint.textContent = 'Paste one or more KEY=value lines. Recognised keys are saved automatically.';
+
+    var textarea = document.createElement('textarea');
+    textarea.className = 'key-paste-textarea';
+    textarea.placeholder = 'PINECONE_API_KEY=pcsk_...\nVOYAGE_API_KEY=pa-...\nGOOGLE_API_KEY=AIza...';
+    textarea.rows = 5;
+    textarea.spellcheck = false;
+
+    var actions = document.createElement('div');
+    actions.className = 'key-paste-actions';
+
+    var applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.className = 'key-btn key-btn-primary';
+    applyBtn.textContent = 'Apply';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'key-btn';
+    cancelBtn.textContent = 'Cancel';
+
+    var result = document.createElement('div');
+    result.className = 'key-paste-result';
+
+    applyBtn.addEventListener('click', function () {
+      var lines = textarea.value.split('\n');
+      var saved = [];
+      lines.forEach(function (line) {
+        line = line.trim();
+        if (!line || line.startsWith('#')) return;
+        var eqIdx = line.indexOf('=');
+        if (eqIdx < 1) return;
+        var envKey = line.slice(0, eqIdx).trim();
+        var value = line.slice(eqIdx + 1).trim();
+        if (!value) return;
+        var providerId = ENV_TO_PROVIDER[envKey];
+        if (!providerId) return;
+        setKey(providerId, value);
+        if (saved.indexOf(providerId) === -1) saved.push(providerId);
+      });
+
+      if (saved.length > 0) {
+        result.textContent = '✓ ' + saved.length + ' key' + (saved.length > 1 ? 's' : '') + ' saved: ' + saved.join(', ');
+        result.className = 'key-paste-result ok';
+        textarea.value = '';
+        if (typeof onApplied === 'function') onApplied(saved);
+      } else {
+        result.textContent = 'No recognised keys found. Check that variable names match (e.g. PINECONE_API_KEY=...).';
+        result.className = 'key-paste-result err';
+      }
+    });
+
+    cancelBtn.addEventListener('click', function () {
+      panel.hidden = true;
+      textarea.value = '';
+      result.textContent = '';
+    });
+
+    actions.appendChild(applyBtn);
+    actions.appendChild(cancelBtn);
+    panel.appendChild(title);
+    panel.appendChild(hint);
+    panel.appendChild(textarea);
+    panel.appendChild(actions);
+    panel.appendChild(result);
+    return panel;
+  }
+
+  // ── CopyMyKeys ────────────────────────────────────────────────────────────────
+
+  var _copyPanelTimer = null;
+
+  function _getCopyWindowMs(value) {
+    var map = { '5': 5 * 60 * 1000, '20': 20 * 60 * 1000, '60': 60 * 60 * 1000 };
+    return map[value] || 0;
+  }
+
+  function _buildCopyKeysText() {
+    var lines = [];
+    Object.keys(PROVIDER_TO_ENV).forEach(function (providerId) {
+      var val = _plaintextCache[providerId];
+      if (val) lines.push(PROVIDER_TO_ENV[providerId] + '=' + val);
+    });
+    return lines.length > 0 ? lines.join('\n') : '(no keys saved in browser)';
+  }
+
+  function buildCopyPanel() {
+    var panel = document.createElement('div');
+    panel.className = 'key-copy-panel';
+
+    var header = document.createElement('div');
+    header.className = 'key-copy-panel-header';
+
+    var label = document.createElement('span');
+    label.className = 'key-copy-panel-label';
+
+    var textarea = document.createElement('textarea');
+    textarea.className = 'key-copy-textarea';
+    textarea.readOnly = true;
+    textarea.rows = 4;
+    textarea.addEventListener('focus', function () { textarea.select(); });
+
+    panel.appendChild(header);
+    header.appendChild(label);
+    panel.appendChild(textarea);
+
+    function refresh(windowMs) {
+      var lastEdit = parseInt(localStorage.getItem(LAST_EDIT_KEY) || '0', 10);
+      var remaining = lastEdit + windowMs - Date.now();
+      if (remaining <= 0) {
+        label.textContent = 'Copy window expired — re-enter a key to reopen.';
+        textarea.value = '';
+        return false;
+      }
+      var mins = Math.ceil(remaining / 60000);
+      label.textContent = 'Your keys (unencrypted) — visible for ~' + mins + ' more minute' + (mins !== 1 ? 's' : '');
+      textarea.value = _buildCopyKeysText();
+      return true;
+    }
+
+    panel._show = function (windowMs) {
+      if (_copyPanelTimer) clearInterval(_copyPanelTimer);
+      var ok = refresh(windowMs);
+      panel.hidden = !ok;
+      if (ok) {
+        _copyPanelTimer = setInterval(function () {
+          if (!refresh(windowMs)) {
+            clearInterval(_copyPanelTimer);
+            panel.hidden = true;
+          }
+        }, 30000);
+      }
+    };
+
+    panel._hide = function () {
+      if (_copyPanelTimer) { clearInterval(_copyPanelTimer); _copyPanelTimer = null; }
+      panel.hidden = true;
+    };
+
+    panel._refresh = function (windowMs) {
+      if (!panel.hidden) refresh(windowMs);
+    };
+
+    panel.hidden = true;
+    return panel;
+  }
+
+  // ── Toolbar (Paste Keys + CopyMyKeys) ────────────────────────────────────────
+
+  function buildToolbar(pastePanel, copyPanel) {
+    var toolbar = document.createElement('div');
+    toolbar.className = 'key-toolbar';
+
+    var copyGroup = document.createElement('div');
+    copyGroup.className = 'key-toolbar-copy-group';
+
+    var copyLabel = document.createElement('label');
+    copyLabel.className = 'key-toolbar-label';
+    copyLabel.textContent = 'Copy my keys:';
+
+    var copySelect = document.createElement('select');
+    copySelect.className = 'key-copy-select';
+    [
+      { value: 'off', label: 'No copying' },
+      { value: '5',   label: 'Within 5 minutes' },
+      { value: '20',  label: 'Within 20 minutes' },
+      { value: '60',  label: 'Within 1 hour' },
+    ].forEach(function (opt) {
+      var el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      copySelect.appendChild(el);
+    });
+
+    var saved = localStorage.getItem(COPY_PREF_KEY) || 'off';
+    copySelect.value = saved;
+
+    copySelect.addEventListener('change', function () {
+      var val = copySelect.value;
+      localStorage.setItem(COPY_PREF_KEY, val);
+      if (val === 'off') {
+        copyPanel._hide();
+      } else {
+        copyPanel._show(_getCopyWindowMs(val));
+      }
+    });
+
+    var pasteBtn = document.createElement('button');
+    pasteBtn.type = 'button';
+    pasteBtn.className = 'key-btn key-btn-primary key-paste-btn';
+    pasteBtn.innerHTML = '&#8675; Paste Keys';
+
+    pasteBtn.addEventListener('click', function () {
+      pastePanel.hidden = !pastePanel.hidden;
+    });
+
+    copyGroup.appendChild(copyLabel);
+    copyGroup.appendChild(copySelect);
+    toolbar.appendChild(copyGroup);
+    toolbar.appendChild(pasteBtn);
+
+    // Show copy panel on load if preference is still within the time window
+    if (saved !== 'off') {
+      var windowMs = _getCopyWindowMs(saved);
+      var lastEdit = parseInt(localStorage.getItem(LAST_EDIT_KEY) || '0', 10);
+      if (lastEdit + windowMs > Date.now()) {
+        copyPanel._show(windowMs);
+      } else {
+        localStorage.setItem(COPY_PREF_KEY, 'off');
+        copySelect.value = 'off';
+      }
+    }
+
+    return toolbar;
+  }
+
   // ── Widget renderer ──────────────────────────────────────────────────────────
 
   function init(containerEl, options) {
@@ -463,6 +714,22 @@
     if (_shouldShowGeminiStarterNotice(providers, options)) {
       containerEl.appendChild(buildGeminiStarterNotice());
     }
+
+    var copyPanel = buildCopyPanel();
+    var pastePanel = buildPastePanel(function () {
+      providers.forEach(function (provider) {
+        _refreshStatusIcon(provider.id);
+        var key = getKey(provider.id);
+        if (key) _validateKey(provider.id, key);
+      });
+      var currentPref = localStorage.getItem(COPY_PREF_KEY) || 'off';
+      copyPanel._refresh(_getCopyWindowMs(currentPref));
+    });
+    var toolbar = buildToolbar(pastePanel, copyPanel);
+
+    containerEl.appendChild(toolbar);
+    containerEl.appendChild(pastePanel);
+    containerEl.appendChild(copyPanel);
 
     var list = document.createElement('div');
     list.className = 'key-provider-list';

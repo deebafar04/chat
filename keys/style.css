@@ -397,6 +397,169 @@
   font-style: italic;
 }
 
+/* ── Toolbar (Paste Keys + CopyMyKeys) ── */
+.key-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.key-toolbar-copy-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.key-toolbar-label {
+  font-size: 0.8rem;
+  color: var(--key-text-muted);
+  white-space: nowrap;
+}
+
+.key-copy-select {
+  font-size: 0.8rem;
+  padding: 5px 8px;
+  border: 1px solid var(--key-border);
+  border-radius: var(--key-radius-sm);
+  background: var(--key-bg);
+  color: var(--key-text);
+  cursor: pointer;
+}
+
+/* ── Paste Keys panel ── */
+.key-paste-panel {
+  background: var(--key-bg);
+  border: 1px solid var(--key-border);
+  border-radius: var(--key-radius);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--key-shadow);
+}
+
+.key-paste-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.key-paste-hint {
+  font-size: 0.78rem;
+  color: var(--key-text-muted);
+  margin: 0 0 10px;
+}
+
+.key-paste-textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.8rem;
+  border: 1px solid var(--key-border);
+  border-radius: var(--key-radius-sm);
+  padding: 8px 10px;
+  resize: vertical;
+  background: var(--key-bg);
+  color: var(--key-text);
+  box-sizing: border-box;
+}
+
+.key-paste-textarea:focus {
+  outline: none;
+  border-color: var(--key-accent);
+}
+
+.key-paste-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.key-paste-result {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: var(--key-radius-sm);
+}
+
+.key-paste-result:empty { display: none; }
+
+.key-paste-result.ok {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.key-paste-result.err {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.dark .key-paste-result.ok,
+[data-theme="dark"] .key-paste-result.ok {
+  color: #86efac;
+  background: #052e16;
+  border-color: #166534;
+}
+
+.dark .key-paste-result.err,
+[data-theme="dark"] .key-paste-result.err {
+  color: #fca5a5;
+  background: #450a0a;
+  border-color: #991b1b;
+}
+
+/* ── CopyMyKeys panel ── */
+.key-copy-panel {
+  background: #fffbea;
+  border: 1px solid #f0c040;
+  border-radius: var(--key-radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.dark .key-copy-panel,
+[data-theme="dark"] .key-copy-panel {
+  background: #2d2500;
+  border-color: #7a6000;
+}
+
+.key-copy-panel-header {
+  margin-bottom: 8px;
+}
+
+.key-copy-panel-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #7a5a00;
+}
+
+.dark .key-copy-panel-label,
+[data-theme="dark"] .key-copy-panel-label {
+  color: #d4a000;
+}
+
+.key-copy-textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.78rem;
+  border: 1px solid #e0c060;
+  border-radius: var(--key-radius-sm);
+  padding: 8px;
+  background: #fff8e0;
+  color: #444;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.dark .key-copy-textarea,
+[data-theme="dark"] .key-copy-textarea {
+  background: #1a1400;
+  color: #d4c080;
+  border-color: #5a4800;
+}
+
 /* CLI provider info */
 .key-cli-info {
   font-size: 0.825rem;

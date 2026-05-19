@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Database, GitBranch, Key, Settings } from "lucide-react";
+import { ArrowLeft, Database, ExternalLink, GitBranch, Key, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +18,6 @@ import { useNetworkRetry, useNetworkStatus } from "@/hooks/use-network-status";
 import { useToastNotifications } from "@/hooks/use-toast-notifications";
 import { storage } from "@/lib/storage/helpers";
 import { cn } from "@/lib/utils";
-import { AnthropicVerificationService } from "@/lib/verification/anthropic-verification-service";
-import { GoogleVerificationService } from "@/lib/verification/google-verification-service";
-import { OpenAIVerificationService } from "@/lib/verification/openai-verification-service";
-import { APIKeySection } from "./api-key-section";
 import { SettingsErrorBoundary, useErrorHandler } from "./error-boundary";
 import {
   ComponentLoading,
@@ -45,104 +41,46 @@ export function SettingsPage({ className }: SettingsPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConnectedState, setShowConnectedState] = useState(false);
+  const [serverKeyCount, setServerKeyCount] = useState<number | null>(null);
 
-  // API Key states
-  const [googleKey, setGoogleKey] = useState("");
-  const [anthropicKey, setAnthropicKey] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [xaiKey, setXaiKey] = useState("");
-  const [groqKey, setGroqKey] = useState("");
-  const [mistralKey, setMistralKey] = useState("");
-  const [perplexityKey, setPerplexityKey] = useState("");
-  const [deepseekKey, setDeepseekKey] = useState("");
-  const [togetherKey, setTogetherKey] = useState("");
-  const [fireworksKey, setFireworksKey] = useState("");
-
-  // Export window state (1-hour window after last key edit)
-  const [exportWindowOpen, setExportWindowOpen] = useState(false);
-  const [exportEnvText, setExportEnvText] = useState<string | null>(null);
-
-  // Verification services
-  const googleService = new GoogleVerificationService();
-  const anthropicService = new AnthropicVerificationService();
-  const openaiService = new OpenAIVerificationService();
-
-  // Network status and error handling
   const { isOnline, isSlowConnection } = useNetworkStatus();
   const handleError = useErrorHandler();
   const toast = useToastNotifications();
 
-  // Keyboard navigation handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Handle keyboard shortcuts for tab navigation
     if (event.ctrlKey || event.metaKey) {
       switch (event.key) {
-        case "1":
-          event.preventDefault();
-          setActiveTab("api-keys");
-          break;
-        case "2":
-          event.preventDefault();
-          setActiveTab("integrations");
-          break;
-        case "3":
-          event.preventDefault();
-          setActiveTab("storage");
-          break;
+        case "1": event.preventDefault(); setActiveTab("api-keys"); break;
+        case "2": event.preventDefault(); setActiveTab("integrations"); break;
+        case "3": event.preventDefault(); setActiveTab("storage"); break;
       }
     }
   }, []);
 
-  // Add keyboard event listener
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Initialize settings data
   const initializeSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      // Simulate a small delay to show loading state
       await new Promise((resolve) => setTimeout(resolve, 300));
-
-      // Decrypt all stored keys into the in-memory cache before reading them.
       await storage.general.initCrypto();
-
-      // Check whether the 1-hour export window is still open.
-      setExportWindowOpen(storage.general.isExportWindowOpen());
-
-      // Load existing API keys
-      const existingGoogleKey = storage.apiKeys.get("google");
-      const existingAnthropicKey = storage.apiKeys.get("anthropic");
-      const existingOpenaiKey = storage.apiKeys.get("openai");
-      const existingXaiKey = storage.apiKeys.get("xai");
-      const existingGroqKey = storage.apiKeys.get("groq");
-      const existingMistralKey = storage.apiKeys.get("mistral");
-      const existingPerplexityKey = storage.apiKeys.get("perplexity");
-      const existingDeepseekKey = storage.apiKeys.get("deepseek");
-      const existingTogetherKey = storage.apiKeys.get("together");
-      const existingFireworksKey = storage.apiKeys.get("fireworks");
-
-      if (existingGoogleKey) setGoogleKey(existingGoogleKey);
-      if (existingAnthropicKey) setAnthropicKey(existingAnthropicKey);
-      if (existingOpenaiKey) setOpenaiKey(existingOpenaiKey);
-      if (existingXaiKey) setXaiKey(existingXaiKey);
-      if (existingGroqKey) setGroqKey(existingGroqKey);
-      if (existingMistralKey) setMistralKey(existingMistralKey);
-      if (existingPerplexityKey) setPerplexityKey(existingPerplexityKey);
-      if (existingDeepseekKey) setDeepseekKey(existingDeepseekKey);
-      if (existingTogetherKey) setTogetherKey(existingTogetherKey);
-      if (existingFireworksKey) setFireworksKey(existingFireworksKey);
-
-      // Check storage health
       const healthCheck = storage.general.checkHealth();
       if (!healthCheck.healthy) {
         console.warn("Storage health issues detected:", healthCheck.errors);
+      }
+      try {
+        const res = await fetch("/api/server-keys");
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.env_keys_present || []);
+          setServerKeyCount(list.length);
+        }
+      } catch {
+        // Server keys endpoint unavailable — ignore
       }
     } catch (err) {
       const errorMessage =
@@ -154,41 +92,10 @@ export function SettingsPage({ className }: SettingsPageProps) {
     }
   }, [handleError]);
 
-  // Load existing API keys on mount
   useEffect(() => {
     initializeSettings();
   }, [initializeSettings]);
 
-  // Export window: generate .env text from decrypted keys in memory
-  const handleExportEnv = useCallback(() => {
-    const ENV_NAMES: Record<string, string> = {
-      google: "GOOGLE_API_KEY",
-      anthropic: "ANTHROPIC_API_KEY",
-      openai: "OPENAI_API_KEY",
-      xai: "XAI_API_KEY",
-      groq: "GROQ_API_KEY",
-      together: "TOGETHER_API_KEY",
-      fireworks: "FIREWORKS_API_KEY",
-      mistral: "MISTRAL_API_KEY",
-      perplexity: "PERPLEXITY_API_KEY",
-      deepseek: "DEEPSEEK_API_KEY",
-      discord: "DISCORD_BOT_TOKEN",
-    };
-    const keys = storage.general.getDecryptedKeysForExport();
-    const lines = Object.entries(keys)
-      .filter(([, v]) => !!v)
-      .map(([provider, value]) => `${ENV_NAMES[provider] || provider.toUpperCase() + "_API_KEY"}=${value}`);
-    setExportEnvText(lines.length > 0 ? lines.join("\n") : "(no keys saved)");
-  }, []);
-
-  const handleEncryptNow = useCallback(() => {
-    storage.general.closeExportWindow();
-    setExportWindowOpen(false);
-    setExportEnvText(null);
-    toast.success("Keys locked", "Export window closed. Keys are encrypted.");
-  }, [toast]);
-
-  // Handle network reconnection
   useNetworkRetry(
     useCallback(() => {
       if (error) {
@@ -200,134 +107,13 @@ export function SettingsPage({ className }: SettingsPageProps) {
     }, [error, initializeSettings, toast])
   );
 
-  // API Key handlers with error handling
-  const handleGoogleKeyChange = useCallback(
-    (value: string) => {
-      try {
-        setGoogleKey(value);
-        if (value.trim()) {
-          storage.apiKeys.set("google", value);
-          toast.success(
-            "Google API key saved",
-            "Your API key has been stored locally."
-          );
-        } else {
-          storage.apiKeys.remove("google");
-          toast.info(
-            "Google API key removed",
-            "Your API key has been cleared."
-          );
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to save Google API key";
-        toast.error("Failed to save API key", errorMessage);
-        handleError(err instanceof Error ? err : new Error(errorMessage));
-      }
-    },
-    [handleError, toast]
-  );
-
-  const handleAnthropicKeyChange = useCallback(
-    (value: string) => {
-      try {
-        setAnthropicKey(value);
-        if (value.trim()) {
-          storage.apiKeys.set("anthropic", value);
-          toast.success(
-            "Anthropic API key saved",
-            "Your API key has been stored locally."
-          );
-        } else {
-          storage.apiKeys.remove("anthropic");
-          toast.info(
-            "Anthropic API key removed",
-            "Your API key has been cleared."
-          );
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Failed to save Anthropic API key";
-        toast.error("Failed to save API key", errorMessage);
-        handleError(err instanceof Error ? err : new Error(errorMessage));
-      }
-    },
-    [handleError, toast]
-  );
-
-  const handleOpenaiKeyChange = useCallback(
-    (value: string) => {
-      try {
-        setOpenaiKey(value);
-        if (value.trim()) {
-          storage.apiKeys.set("openai", value);
-          toast.success(
-            "OpenAI API key saved",
-            "Your API key has been stored locally."
-          );
-        } else {
-          storage.apiKeys.remove("openai");
-          toast.info(
-            "OpenAI API key removed",
-            "Your API key has been cleared."
-          );
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to save OpenAI API key";
-        toast.error("Failed to save API key", errorMessage);
-        handleError(err instanceof Error ? err : new Error(errorMessage));
-      }
-    },
-    [handleError, toast]
-  );
-
-  const handleXaiKeyChange = useCallback((value: string) => {
-    try { setXaiKey(value); value.trim() ? storage.apiKeys.set("xai", value) : storage.apiKeys.remove("xai"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handleGroqKeyChange = useCallback((value: string) => {
-    try { setGroqKey(value); value.trim() ? storage.apiKeys.set("groq", value) : storage.apiKeys.remove("groq"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handleMistralKeyChange = useCallback((value: string) => {
-    try { setMistralKey(value); value.trim() ? storage.apiKeys.set("mistral", value) : storage.apiKeys.remove("mistral"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handlePerplexityKeyChange = useCallback((value: string) => {
-    try { setPerplexityKey(value); value.trim() ? storage.apiKeys.set("perplexity", value) : storage.apiKeys.remove("perplexity"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handleDeepseekKeyChange = useCallback((value: string) => {
-    try { setDeepseekKey(value); value.trim() ? storage.apiKeys.set("deepseek", value) : storage.apiKeys.remove("deepseek"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handleTogetherKeyChange = useCallback((value: string) => {
-    try { setTogetherKey(value); value.trim() ? storage.apiKeys.set("together", value) : storage.apiKeys.remove("together"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  const handleFireworksKeyChange = useCallback((value: string) => {
-    try { setFireworksKey(value); value.trim() ? storage.apiKeys.set("fireworks", value) : storage.apiKeys.remove("fireworks"); }
-    catch (err) { handleError(err instanceof Error ? err : new Error(String(err))); }
-  }, [handleError]);
-
-  // Get storage summary for display
   const storageSummary = storage.general.getSummary();
+  const browserKeyCount = storageSummary.apiKeys.count;
 
-  // Show loading state
   if (isLoading) {
     return <SettingsLoadingState className={className} />;
   }
 
-  // Show error state
   if (error) {
     return (
       <SettingsErrorState
@@ -341,11 +127,9 @@ export function SettingsPage({ className }: SettingsPageProps) {
 
   return (
     <SettingsErrorBoundary>
-      {/* Network Status Indicators */}
       <NetworkState isOnline={isOnline} onRetry={initializeSettings} />
       {showConnectedState && <ConnectedState />}
 
-      {/* Slow Connection Warning */}
       {isOnline && isSlowConnection && (
         <div className="fixed top-4 left-4 z-50">
           <Card className="w-80 border-yellow-200 bg-yellow-50">
@@ -359,7 +143,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
         </div>
       )}
 
-      {/* Main Content */}
       <div className={cn("container mx-auto px-4 py-4 sm:py-8", className)}>
         <div className="mx-auto max-w-4xl">
           {/* Page Header */}
@@ -392,7 +175,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
               </div>
             </div>
 
-            {/* Storage Summary and Enhancements */}
             {storageSummary.totalItems > 0 ? (
               <SettingsEnhancements />
             ) : (
@@ -446,15 +228,13 @@ export function SettingsPage({ className }: SettingsPageProps) {
                   >
                     <Key aria-hidden="true" className="h-4 w-4 sm:h-5 sm:w-5" />
                     <div className="text-center">
-                      <div className="font-medium text-xs sm:text-sm">
-                        API Keys
-                      </div>
+                      <div className="font-medium text-xs sm:text-sm">API Keys</div>
                       <div className="mt-1 hidden text-gray-500 text-xs sm:block dark:text-gray-400">
                         Configure AI provider credentials
                       </div>
-                      {storageSummary.apiKeys.count > 0 && (
+                      {browserKeyCount > 0 && (
                         <Badge className="mt-1 text-xs" variant="secondary">
-                          {storageSummary.apiKeys.count}
+                          {browserKeyCount}
                         </Badge>
                       )}
                     </div>
@@ -473,9 +253,7 @@ export function SettingsPage({ className }: SettingsPageProps) {
                       className="h-4 w-4 sm:h-5 sm:w-5"
                     />
                     <div className="text-center">
-                      <div className="font-medium text-xs sm:text-sm">
-                        Integrations
-                      </div>
+                      <div className="font-medium text-xs sm:text-sm">Integrations</div>
                       <div className="mt-1 hidden text-gray-500 text-xs sm:block dark:text-gray-400">
                         Connect external services
                       </div>
@@ -500,9 +278,7 @@ export function SettingsPage({ className }: SettingsPageProps) {
                       className="h-4 w-4 sm:h-5 sm:w-5"
                     />
                     <div className="text-center">
-                      <div className="font-medium text-xs sm:text-sm">
-                        Storage
-                      </div>
+                      <div className="font-medium text-xs sm:text-sm">Storage</div>
                       <div className="mt-1 hidden text-gray-500 text-xs sm:block dark:text-gray-400">
                         Manage storage settings
                       </div>
@@ -510,27 +286,17 @@ export function SettingsPage({ className }: SettingsPageProps) {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Keyboard shortcuts help - hidden on mobile */}
                 <div className="mt-4 hidden text-center text-gray-500 text-xs sm:block dark:text-gray-400">
-                  <span className="sr-only">Keyboard shortcuts: </span>
                   Use{" "}
-                  <kbd className="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">
-                    Ctrl+1
-                  </kbd>
-                  ,
-                  <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">
-                    Ctrl+2
-                  </kbd>
-                  ,
-                  <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">
-                    Ctrl+3
-                  </kbd>{" "}
+                  <kbd className="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">Ctrl+1</kbd>,
+                  <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">Ctrl+2</kbd>,
+                  <kbd className="ml-1 rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">Ctrl+3</kbd>{" "}
                   to navigate tabs
                 </div>
               </CardContent>
             </Card>
 
-            {/* API Keys Tab */}
+            {/* API Keys Tab — summary + link to /keys */}
             <TabsContent
               aria-labelledby="api-keys-tab"
               className="space-y-6"
@@ -545,242 +311,50 @@ export function SettingsPage({ className }: SettingsPageProps) {
                     API Keys
                   </CardTitle>
                   <CardDescription>
-                    Configure API keys for AI providers. Keys are stored locally
-                    in your browser and never sent to our servers.
+                    Keys are stored encrypted in your browser. Use the Keys page
+                    to add, remove, or paste multiple keys at once.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 p-4 sm:space-y-6 sm:p-6">
-                  {/* Security Notice */}
-                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4 dark:border-green-800 dark:bg-green-900/20">
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <div className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600 sm:h-5 sm:w-5 dark:text-green-400">
-                        🔒
-                      </div>
-                      <div className="min-w-0 text-xs sm:text-sm">
-                        <div className="mb-1 font-medium text-green-900 dark:text-green-100">
-                          Encrypted at Rest
-                        </div>
-                        <div className="text-green-700 dark:text-green-300 space-y-1">
-                          <p>
-                            Keys are encrypted with an AES-GCM key stored in
-                            your browser&apos;s IndexedDB. That key is{" "}
-                            <strong>non-extractable</strong> — JavaScript cannot
-                            read its raw bytes, so the ciphertext in localStorage
-                            is useless to any script or extension that can only
-                            read storage.
-                          </p>
-                          <p>
-                            When you send a message, the key is briefly decrypted
-                            in memory and forwarded over HTTPS to the server,
-                            which passes it directly to the AI provider. HTTPS
-                            prevents network interception, but code already
-                            running on this page could in theory read the key from
-                            memory at that moment.
-                          </p>
-                        </div>
-                      </div>
+                <CardContent className="space-y-6 p-4 sm:p-6">
+                  {/* Key count summary */}
+                  <div className="flex flex-wrap gap-8">
+                    <div className="flex flex-col">
+                      <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {browserKeyCount}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        keys saved in browser
+                      </span>
                     </div>
+                    {serverKeyCount !== null && (
+                      <div className="flex flex-col">
+                        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                          {serverKeyCount}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          keys from server .env
+                        </span>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Export window — only shown within 1 hour of last key edit */}
-                  {exportWindowOpen && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 dark:border-amber-800 dark:bg-amber-900/20">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start gap-2 sm:gap-3">
-                          <div className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 sm:h-5 sm:w-5 dark:text-amber-400">
-                            ℹ
-                          </div>
-                          <div className="min-w-0 text-xs sm:text-sm">
-                            <div className="mb-1 font-medium text-amber-900 dark:text-amber-100">
-                              Export Window Open (1 hour)
-                            </div>
-                            <div className="text-amber-700 dark:text-amber-300">
-                              Your keys can be exported as a <code>.env</code> file
-                              within one hour of the last edit. After that, only
-                              re-entering a key reopens the window. Click{" "}
-                              <strong>Encrypt Now</strong> to close it immediately.
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            onClick={handleExportEnv}
-                            size="sm"
-                            variant="outline"
-                          >
-                            Export as .env
-                          </Button>
-                          <Button
-                            onClick={handleEncryptNow}
-                            size="sm"
-                            variant="default"
-                          >
-                            Encrypt Now
-                          </Button>
-                        </div>
-                        {exportEnvText !== null && (
-                          <textarea
-                            className="w-full rounded border border-amber-300 bg-white p-2 font-mono text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
-                            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                            readOnly
-                            rows={Math.min(10, exportEnvText.split("\n").length + 1)}
-                            style={{ filter: "blur(4px)" }}
-                            title="Click to reveal"
-                            value={exportEnvText}
-                            onFocus={(e) => { (e.target as HTMLTextAreaElement).style.filter = "none"; }}
-                            onBlur={(e) => { (e.target as HTMLTextAreaElement).style.filter = "blur(4px)"; }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   <Separator />
 
-                  {/* Google AI API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Google AI API key to use Gemini models"
-                        onChange={handleGoogleKeyChange}
-                        onVerify={googleService.verify.bind(googleService)}
-                        placeholder="AIza..."
-                        provider="google"
-                        title="Google AI"
-                        value={googleKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Anthropic API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Anthropic API key to use Claude models"
-                        onChange={handleAnthropicKeyChange}
-                        onVerify={anthropicService.verify.bind(
-                          anthropicService
-                        )}
-                        placeholder="sk-ant-..."
-                        provider="anthropic"
-                        title="Anthropic"
-                        value={anthropicKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* OpenAI API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your OpenAI API key to use GPT models"
-                        onChange={handleOpenaiKeyChange}
-                        onVerify={openaiService.verify.bind(openaiService)}
-                        placeholder="sk-..."
-                        provider="openai"
-                        title="OpenAI"
-                        value={openaiKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* xAI API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your xAI API key to use Grok models"
-                        onChange={handleXaiKeyChange}
-                        placeholder="xai-..."
-                        provider="xai"
-                        title="xAI"
-                        value={xaiKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Groq API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Groq API key for fast open-source models"
-                        onChange={handleGroqKeyChange}
-                        placeholder="gsk_..."
-                        provider="groq"
-                        title="Groq"
-                        value={groqKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Mistral API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Mistral API key to use Mistral models"
-                        onChange={handleMistralKeyChange}
-                        placeholder=""
-                        provider="mistral"
-                        title="Mistral"
-                        value={mistralKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Perplexity API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Perplexity API key for online search models"
-                        onChange={handlePerplexityKeyChange}
-                        placeholder="pplx-..."
-                        provider="perplexity"
-                        title="Perplexity"
-                        value={perplexityKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* DeepSeek API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your DeepSeek API key to use DeepSeek models"
-                        onChange={handleDeepseekKeyChange}
-                        placeholder=""
-                        provider="deepseek"
-                        title="DeepSeek"
-                        value={deepseekKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Together AI API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Together AI API key for open-source models"
-                        onChange={handleTogetherKeyChange}
-                        placeholder=""
-                        provider="together"
-                        title="Together AI"
-                        value={togetherKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
-
-                  {/* Fireworks API Key */}
-                  <Suspense fallback={<ComponentLoading />}>
-                    <SettingsErrorBoundary>
-                      <APIKeySection
-                        description="Configure your Fireworks AI API key for fast model inference"
-                        onChange={handleFireworksKeyChange}
-                        placeholder=""
-                        provider="fireworks"
-                        title="Fireworks AI"
-                        value={fireworksKey}
-                      />
-                    </SettingsErrorBoundary>
-                  </Suspense>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Add or manage keys, paste from a{" "}
+                      <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                        .env
+                      </code>{" "}
+                      file, and control copy visibility on the Keys page.
+                    </p>
+                    <Button asChild className="w-full sm:w-auto" variant="default">
+                      <a className="flex items-center gap-2" href="/keys">
+                        <ExternalLink className="h-4 w-4" />
+                        Manage API Keys
+                      </a>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -805,7 +379,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 p-4 sm:space-y-6 sm:p-6">
-                  {/* Security Notice */}
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 sm:p-4 dark:border-blue-800 dark:bg-blue-900/20">
                     <div className="flex items-start gap-2 sm:gap-3">
                       <div className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 sm:h-5 sm:w-5 dark:text-blue-400">
@@ -826,7 +399,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
 
                   <Separator />
 
-                  {/* GitHub Integration */}
                   <Suspense fallback={<ComponentLoading />}>
                     <SettingsErrorBoundary>
                       <GitHubIntegrationSection />
@@ -854,7 +426,6 @@ export function SettingsPage({ className }: SettingsPageProps) {
         </div>
       </div>
 
-      {/* Toast Notifications */}
       <ToastNotifications
         notifications={toast.notifications}
         onRemove={toast.removeNotification}
