@@ -16,7 +16,7 @@ Each contributor should have their own instance separate from the main `modelear
 ## Step 1 — Create a Supabase Project
 
 1. Go to [supabase.com](https://supabase.com) → sign in → **New Project**
-2. Name it `your-name-chat` (e.g. `mounika-chat`)
+2. Name it `your-name-chat` 
 3. Set a strong database password and save it
 4. Choose region: **US East**
 5. Click **Create Project** — takes ~2 minutes
@@ -125,7 +125,7 @@ Both queries should return: `Success. No rows returned`
 
 ## Step 4 — Add BetterAuth URL
 
-After deploy, copy your Vercel URL (e.g. `https://mounika-chat.vercel.app`) then:
+After deploy, copy your Vercel URL (e.g. `https://your-app.vercel.app`) then:
 
 1. Go to **Project Settings → Environment Variables**
 2. Add:
