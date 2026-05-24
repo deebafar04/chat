@@ -1,71 +1,103 @@
-<a href="https://chat.vercel.ai/">
-  <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
-</a>
+# Model.earth CodeChat
 
-<p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
-</p>
+A multimodal AI chat application built on the [Vercel AI Chatbot](https://github.com/vercel/ai-chatbot) starter, significantly extended for the [Model.earth](https://model.earth) open-source community.
 
-<p align="center">
-  <a href="https://chatbot.dev"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
-</p>
-<br/>
+- [Live app](https://modelearth.vercel.app/chat) · [Key manager](https://modelearth.vercel.app/chat/keys/) · [RAG ingestion](ingestion/)
+- [Original Vercel template](https://vercel.com/templates/next.js/chatbot) · [Vercel GitHub](https://github.com/vercel/ai-chatbot)
 
-## Features
+---
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://ai-sdk.dev/docs/introduction)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+## What We Added
 
-## Model Providers
+### API Key Management
+A fully custom browser-based key manager (`/keys`) that stores API keys encrypted at rest using AES-GCM with a non-extractable browser key in IndexedDB — matching the same format used by the chat app. Features include:
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. The default model is [OpenAI](https://openai.com) GPT-4.1 Mini, with support for Anthropic, Google, and xAI models.
+- Add, remove, and validate keys per provider
+- **Paste Keys** — paste multiple `KEY=value` lines from a `.env` file in one step
+- **CopyMyKeys** — reveal decrypted keys in a time-limited window (5 / 20 / 60 min) for copying to another machine
+- Server `.env` keys shown alongside browser keys with a `.env` badge
+- Embeddable vanilla JS widget (no React, no build step) reusable across the webroot
 
-### AI Gateway Authentication
+### RAG — Retrieval-Augmented Generation
+Semantic search over indexed GitHub repositories using Pinecone vector DB + Voyage AI embeddings:
 
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
+- `ingestion/` pipeline indexes repo content as vector embeddings into Pinecone
+- At chat time, the top matching code/doc snippets are retrieved and injected into the prompt
+- RAG timing panel shows per-request latency (prompt received → RAG → LLM)
+- Slow RAG (>8s) flagged in amber
+- Configurable via `RAG_ENABLED`, `RAG_TOP_K`, `RAG_SCORE_THRESHOLD`, and other env vars
 
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env` file.
+### GitHub Repo Selection Navigation
+Users can select which GitHub repository to use as context for the current conversation. The selected repo filters RAG results and scopes GitHub MCP tool calls to the relevant codebase.
 
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
+### Multi-Provider Support
+Supports Google Gemini, Anthropic Claude, OpenAI GPT, xAI Grok, Groq, Mistral, Perplexity, DeepSeek, Together AI, and Fireworks — all from a single interface. Keys are stored per-provider in browser storage and sent per-request to the server.
 
-## Deploy Your Own
+### Authentication — BetterAuth
+Replaced the original Auth.js with [BetterAuth](https://better-auth.com) for email/password login and social providers (Google, GitHub, LinkedIn, Microsoft, Discord, Facebook). Sessions use JWE cookie caching.
 
-You can deploy your own version of Chatbot to Vercel with one click:
+### Settings Page
+Simplified settings UI that shows a summary of saved keys and links to the `/keys` page. No duplicate key entry — all key management is on `/keys`.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
+---
 
-## Running locally
+## Features (from Vercel starter, still present)
 
-You will need to use the environment variables [defined in `docker/.env.example`](../docker/.env.example) (at the webroot root) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `docker/.env` file is all that is necessary.
+- [Next.js](https://nextjs.org) App Router with React Server Components
+- [AI SDK](https://ai-sdk.dev) for unified LLM streaming across providers
+- [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com)
+- [Drizzle ORM](https://orm.drizzle.team) + PostgreSQL (Supabase) for chat history
+- Artifact system — text documents, Python code, Mermaid diagrams, spreadsheets
+- Python code execution sandbox
+- File and image attachments
+- GitHub MCP (Model Context Protocol) integration
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+---
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+## Running Locally
+
+From the `webroot` root directory:
 
 ```bash
-pnpm install
-pnpm db:migrate # Setup database or apply latest database changes
-pnpm dev
+node chat/server.mjs
 ```
 
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+| URL | What |
+|---|---|
+| http://localhost:8888/chat | Chat app |
+| http://localhost:8888/chat/keys/ | Key manager |
+| http://localhost:8888 | Static webroot pages |
+
+See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for full setup instructions including Supabase and Vercel deployment.
+
+---
+
+## Environment Variables
+
+See [`docker/.env`](../docker/.env) for a full reference. Minimum required:
+
+```
+BETTER_AUTH_SECRET=          # 32+ char random string
+BETTER_AUTH_BASE_URL=        # Your deployment URL
+ALLOWED_ORIGINS=             # Comma-separated allowed origins
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+POSTGRES_URL=
+GOOGLE_GENERATIVE_AI_API_KEY=
+```
+
+Optional for RAG:
+```
+RAG_ENABLED=true
+PINECONE_API_KEY=
+PINECONE_INDEX=
+PINECONE_INDEX_HOST=
+VOYAGE_API_KEY=
+```
+
+---
+
+## Contributor Deployment
+
+Each contributor runs their own personal Vercel + Supabase instance. See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for step-by-step instructions.
