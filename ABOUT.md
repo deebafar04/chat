@@ -21,3 +21,4 @@ A multimodal AI chat application with advanced agent orchestration, built on the
 **BetterAuth** — Replaced Auth.js with [BetterAuth](https://better-auth.com) for email/password and social login (Google, GitHub, LinkedIn, Microsoft, Discord, Facebook).
 
 **Contributor Deployments** — Each contributor runs their own Vercel + Supabase instance. See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) for setup instructions.
+The end
