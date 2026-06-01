@@ -224,7 +224,7 @@ Each chunk is stored with comprehensive metadata:
 ```python
 {
     "id": "uuid",
-    "values": [1536-dim embedding],
+    "values": [1024-dim embedding],
     "metadata": {
         "repo_name": "modelearth/webroot",
         "file_path": "codechat/ingestion/vector_db_sync.py",
@@ -469,7 +469,7 @@ from pinecone import Pinecone, ServerlessSpec
 pc = Pinecone(api_key='...')
 pc.create_index(
     name='repo-chunks',
-    dimension=1536,
+    dimension=1024,
     metric='cosine',
     spec=ServerlessSpec(cloud='aws', region='us-east-1')
 )

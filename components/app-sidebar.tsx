@@ -139,21 +139,27 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
     !noneSelected && (allSelected || ragSelectedRepos.includes(repo.name));
 
   const handleToggleRepo = (repo: Repo) => {
+  if (allSelected) {
     setNoneSelected(false);
-    if (allSelected) {
-      const next = availableRepos.filter((r) => r.name !== repo.name).map((r) => r.name);
-      setRagSelectedRepos(next);
-    } else {
-      const already = ragSelectedRepos.includes(repo.name);
-      if (already) {
-        const next = ragSelectedRepos.filter((r) => r !== repo.name);
-        setRagSelectedRepos(next.length === 0 ? [] : next);
+    const next = availableRepos.filter((r) => r.name !== repo.name).map((r) => r.name);
+    setRagSelectedRepos(next);
+  } else {
+    const already = ragSelectedRepos.includes(repo.name);
+    if (already) {
+      const next = ragSelectedRepos.filter((r) => r !== repo.name);
+      if (next.length === 0) {
+        setNoneSelected(true);
+        setRagSelectedRepos([]);
       } else {
-        const next = [...ragSelectedRepos, repo.name];
-        setRagSelectedRepos(next.length === availableRepos.length ? [] : next);
+        setRagSelectedRepos(next);
       }
+    } else {
+      setNoneSelected(false);
+      const next = [...ragSelectedRepos, repo.name];
+      setRagSelectedRepos(next.length === availableRepos.length ? [] : next);
     }
-  };
+  }
+};
 
   // Keep --sidebar-width CSS variable in sync (used by any residual CSS; re-run on state change
   // so React's SidebarProvider re-render doesn't reset it back to the default 16rem)
