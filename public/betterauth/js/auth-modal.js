@@ -392,6 +392,26 @@ class AuthModal {
 
 // Check if user is authenticated and update UI
 async function checkAuthSession() {
+    // After OAuth, the relay puts user info in the URL hash — no cross-origin
+    // fetch needed (avoids Chrome incognito cookie blocking).
+    const hashParams = new URLSearchParams(location.hash.slice(1));
+    const authUserEncoded = hashParams.get('auth_user');
+    if (authUserEncoded) {
+        try {
+            const user = JSON.parse(decodeURIComponent(atob(authUserEncoded)));
+            if (user && user.id) {
+                history.replaceState(null, '', location.pathname + location.search);
+                if (typeof authManager !== 'undefined' && authManager.initializeAuth) {
+                    authManager.currentUser = user;
+                    authManager.updateUI(true);
+                }
+                return user;
+            }
+        } catch (e) {
+            console.warn('[Auth Modal] Error parsing auth_user from hash:', e);
+        }
+    }
+
     try {
         // Use configured API URL or fall back based on environment
         const apiBase = window.AUTH_API_URL ||
@@ -408,10 +428,6 @@ async function checkAuthSession() {
             if (session && session.user) {
                 console.log('[Auth Modal] User is authenticated:', session.user);
 
-                // Session is stored in httpOnly cookie on backend
-                // No need to store in localStorage (security risk)
-
-                // Update auth UI if authManager exists
                 if (typeof authManager !== 'undefined' && authManager.initializeAuth) {
                     authManager.currentUser = session.user;
                     authManager.updateUI(true);

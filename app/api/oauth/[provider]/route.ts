@@ -73,7 +73,10 @@ export async function GET(
       },
       body: JSON.stringify({
         provider,
-        callbackURL: redirect,
+        // Redirect through relay so session is read first-party before returning
+        // to the original page. This avoids the cross-origin get-session fetch
+        // that fails in Chrome incognito.
+        callbackURL: `${baseURL}/api/oauth/relay?redirect=${encodeURIComponent(redirect)}`,
         disableRedirect: true,
       }),
     });

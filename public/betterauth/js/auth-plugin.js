@@ -170,12 +170,50 @@
 
   // ── Session Check & UI Update ────────────────────────────────────
 
+  function showUser(user, signInContainer, userInfoContainer) {
+    log('User authenticated: ' + user.name);
+    if (signInContainer) signInContainer.style.display = 'none';
+    if (userInfoContainer) {
+      userInfoContainer.style.display = 'block';
+      var signOutBtn = document.getElementById('auth-plugin-signOut');
+      if (signOutBtn) signOutBtn.style.display = 'inline-block';
+      var avatar = document.getElementById('auth-plugin-avatar');
+      if (avatar && user.image) {
+        avatar.src = user.image;
+        avatar.style.display = 'block';
+      } else if (avatar) {
+        avatar.style.display = 'none';
+      }
+      var nameEl = document.getElementById('auth-plugin-name');
+      if (nameEl) nameEl.textContent = user.name;
+      var emailEl = document.getElementById('auth-plugin-email');
+      if (emailEl && user.email) emailEl.textContent = user.email;
+    }
+  }
+
   function updateAuthUI() {
     var signInContainer = document.querySelector('.sign-in-container');
     var userInfoContainer = document.querySelector('.auth-plugin-user-info') ||
                             document.querySelector('.user-info-container');
 
     log('Updating authentication UI state');
+
+    // After OAuth redirect the relay encodes user info in the URL hash so we
+    // never need a cross-origin get-session fetch (blocked in Chrome incognito).
+    var hashParams = new URLSearchParams(location.hash.slice(1));
+    var authUserEncoded = hashParams.get('auth_user');
+    if (authUserEncoded) {
+      try {
+        var user = JSON.parse(decodeURIComponent(atob(authUserEncoded)));
+        if (user && user.id) {
+          history.replaceState(null, '', location.pathname + location.search);
+          showUser(user, signInContainer, userInfoContainer);
+          return;
+        }
+      } catch (e) {
+        log('Error parsing auth_user from hash: ' + e);
+      }
+    }
 
     fetch(authApiUrl + '/auth/get-session', { credentials: 'include' })
       .then(function (response) {
@@ -184,30 +222,7 @@
       })
       .then(function (result) {
         if (result && result.user) {
-          var user = result.user;
-          log('User authenticated: ' + user.name);
-
-          if (signInContainer) signInContainer.style.display = 'none';
-          if (userInfoContainer) {
-            userInfoContainer.style.display = 'block';
-
-            var signOutBtn = document.getElementById('auth-plugin-signOut');
-            if (signOutBtn) signOutBtn.style.display = 'inline-block';
-
-            var avatar = document.getElementById('auth-plugin-avatar');
-            if (avatar && user.image) {
-              avatar.src = user.image;
-              avatar.style.display = 'block';
-            } else if (avatar) {
-              avatar.style.display = 'none';
-            }
-
-            var nameEl = document.getElementById('auth-plugin-name');
-            if (nameEl) nameEl.textContent = user.name;
-
-            var emailEl = document.getElementById('auth-plugin-email');
-            if (emailEl && user.email) emailEl.textContent = user.email;
-          }
+          showUser(result.user, signInContainer, userInfoContainer);
           return;
         }
         showSignedOut(signInContainer, userInfoContainer);
