@@ -22,9 +22,35 @@ export type ProviderModel = {
   /** Exact model/version identifier sent to the provider API (e.g. Tripo's
    *  date-stamped "v3.0-20250812"). Falls back to `id` when omitted. */
   apiModel?: string;
+  /** Which `task3d.modes` entry this model uses. Falls back to the model id. */
+  apiMode?: string;
   /** User-facing message shown when the provider reports the account has no
    *  API credits (e.g. Tripo code 2010 / free trial not activated). */
   noCreditsHint?: string;
+};
+
+/** One submit variant within a Task3dSpec (e.g. text-to-3d vs image-to-3d). */
+export type Task3dMode = {
+  /** Path appended to `Task3dSpec.base` to form the submit URL. */
+  submitPath: string;
+  /** Request body template; string values may contain {prompt}/{model}/{image_url}. */
+  body: Record<string, unknown>;
+};
+
+/** Declarative spec for a task-based 3D generation API, consumed by the generic
+ *  Rust 3D runner. See providers.js header for full docs. */
+export type Task3dSpec = {
+  base: string;
+  taskIdPath: string;
+  statusValuePath: string;
+  statusSuccess: string[];
+  statusFailure: string[];
+  errorMessagePath?: string;
+  outputPath: string;
+  outputKeys: string[];
+  errorCodePath?: string;
+  noCreditsCode?: number;
+  modes: Record<string, Task3dMode>;
 };
 
 export type ProviderInfo = {
@@ -35,6 +61,9 @@ export type ProviderInfo = {
   getKeyUrl: string;
   tokenOnly?: boolean;
   cliOnly?: boolean;
+  /** Declarative task-based 3D generation API spec (Meshy, Tripo, …). Drives the
+   *  generic backend 3D runner so no provider endpoints/parsing are hardcoded. */
+  task3d?: Task3dSpec;
   models: ProviderModel[];
 };
 

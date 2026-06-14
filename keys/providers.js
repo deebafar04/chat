@@ -21,6 +21,20 @@
  * noCreditsHint field (optional): user-facing message shown when the provider
  * reports the account has no API credits. Kept here in config so the wording
  * and any links are editable without touching backend/frontend code.
+ *
+ * apiMode field (optional, per-model): which `task3d.modes` entry this model
+ * uses (e.g. Tripo versions all use 'text_to_model'). Falls back to the model id.
+ *
+ * task3d field (optional, provider-level): declarative spec for a task-based 3D
+ * generation API (endpoint, request body, response JSON paths, status values,
+ * error codes). The Arts Engine frontend builds a per-request spec from this and
+ * sends it to the generic Rust 3D runner, so NO provider-specific endpoints or
+ * parsing live in backend code. Body strings support {prompt}/{model}/{image_url}
+ * placeholders, substituted by the frontend. Shape:
+ *   { base, taskIdPath, statusValuePath, statusSuccess[], statusFailure[],
+ *     errorMessagePath?, outputPath, outputKeys[], errorCodePath?, noCreditsCode?,
+ *     modes: { <mode>: { submitPath, body } } }
+ * Submit POSTs to `base + submitPath`; status is polled at `{submitUrl}/{taskId}`.
  */
 
 // Shared across all Tripo models — shown when Tripo returns "no credits" (code 2010).
@@ -124,11 +138,25 @@ const _providers = [
     keyPlaceholder: 'msy-...',
     keyHint: '100 free credits/month — Pro plan required for API access',
     getKeyUrl: 'https://www.meshy.ai/api',
+    task3d: {
+      base: 'https://api.meshy.ai/openapi',
+      taskIdPath: 'result',
+      statusValuePath: 'status',
+      statusSuccess: ['SUCCEEDED'],
+      statusFailure: ['FAILED', 'CANCELED', 'EXPIRED'],
+      errorMessagePath: 'task_error.message',
+      outputPath: 'model_urls',
+      outputKeys: ['glb', 'usdz', 'fbx', 'obj'],
+      modes: {
+        'text-to-3d':  { submitPath: '/v2/text-to-3d',  body: { mode: 'preview', prompt: '{prompt}', art_style: 'realistic', should_remesh: true } },
+        'image-to-3d': { submitPath: '/v1/image-to-3d', body: { image_url: '{image_url}', should_texture: true } },
+      },
+    },
     models: [
-      { id: 'text-to-3d',        name: 'Text to 3D',         description: 'Generate 3D models from text prompts (meshy-6)',      isDefault: true,  active: true, outputs: ['3d'] },
-      { id: 'image-to-3d',       name: 'Image to 3D',        description: 'Generate 3D models from a reference image',          isDefault: false, active: true, outputs: ['3d'] },
-      { id: 'multiimage-to-3d',  name: 'Multi-Image to 3D',  description: 'Generate 3D from multiple reference images',         isDefault: false, active: true, outputs: ['3d'] },
-      { id: 'ai-texturing',      name: 'AI Texturing',       description: 'Apply AI-generated textures to existing 3D meshes',  isDefault: false, active: true, outputs: ['3d'] },
+      { id: 'text-to-3d',        name: 'Text to 3D',         description: 'Generate 3D models from text prompts (meshy-6)',      isDefault: true,  active: true, outputs: ['3d'], apiMode: 'text-to-3d' },
+      { id: 'image-to-3d',       name: 'Image to 3D',        description: 'Generate 3D models from a reference image',          isDefault: false, active: true, outputs: ['3d'], apiMode: 'image-to-3d' },
+      { id: 'multiimage-to-3d',  name: 'Multi-Image to 3D',  description: 'Generate 3D from multiple reference images',         isDefault: false, active: true, outputs: ['3d'], apiMode: 'image-to-3d' },
+      { id: 'ai-texturing',      name: 'AI Texturing',       description: 'Apply AI-generated textures to existing 3D meshes',  isDefault: false, active: true, outputs: ['3d'], apiMode: 'text-to-3d' },
     ],
   },
   {
@@ -137,10 +165,24 @@ const _providers = [
     keyPlaceholder: 'tsk_...',
     keyHint: '300 free credits/month (~24 models) — platform.tripo3d.ai',
     getKeyUrl: 'https://platform.tripo3d.ai/api-keys',
+    task3d: {
+      base: 'https://api.tripo3d.ai/v2/openapi',
+      taskIdPath: 'data.task_id',
+      statusValuePath: 'data.status',
+      statusSuccess: ['success'],
+      statusFailure: ['failed', 'cancelled', 'banned', 'expired'],
+      outputPath: 'data.output',
+      outputKeys: ['pbr_model', 'model'],
+      errorCodePath: 'code',   // Tripo wraps errors in a numeric code (can appear in a 200 body)
+      noCreditsCode: 2010,     // → NO_CREDITS sentinel → noCreditsHint
+      modes: {
+        'text_to_model': { submitPath: '/task', body: { type: 'text_to_model', prompt: '{prompt}', model_version: '{model}' } },
+      },
+    },
     models: [
-      { id: 'v3.0',  name: 'Tripo v3.0',  description: 'Stable text/image-to-3D generation',             isDefault: true,  active: true, outputs: ['3d'], apiModel: 'v3.0-20250812', noCreditsHint: TRIPO_NO_CREDITS_HINT },
-      { id: 'v3.1',  name: 'Tripo v3.1',  description: 'Enhanced quality 3D generation',                 isDefault: false, active: true, outputs: ['3d'], apiModel: 'v3.1-20260211', noCreditsHint: TRIPO_NO_CREDITS_HINT },
-      { id: 'p1',    name: 'Tripo P1',    description: 'Premium game-ready 3D with higher fidelity',     isDefault: false, active: true, outputs: ['3d'], apiModel: 'P1-20260311', noCreditsHint: TRIPO_NO_CREDITS_HINT },
+      { id: 'v3.0',  name: 'Tripo v3.0',  description: 'Stable text/image-to-3D generation',             isDefault: true,  active: true, outputs: ['3d'], apiMode: 'text_to_model', apiModel: 'v3.0-20250812', noCreditsHint: TRIPO_NO_CREDITS_HINT },
+      { id: 'v3.1',  name: 'Tripo v3.1',  description: 'Enhanced quality 3D generation',                 isDefault: false, active: true, outputs: ['3d'], apiMode: 'text_to_model', apiModel: 'v3.1-20260211', noCreditsHint: TRIPO_NO_CREDITS_HINT },
+      { id: 'p1',    name: 'Tripo P1',    description: 'Premium game-ready 3D with higher fidelity',     isDefault: false, active: true, outputs: ['3d'], apiMode: 'text_to_model', apiModel: 'P1-20260311', noCreditsHint: TRIPO_NO_CREDITS_HINT },
     ],
   },
   {
