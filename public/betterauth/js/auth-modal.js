@@ -394,16 +394,26 @@ class AuthModal {
 async function checkAuthSession() {
     // After OAuth, the relay puts user info in the URL hash — no cross-origin
     // fetch needed (avoids Chrome incognito cookie blocking).
-    const hashParams = new URLSearchParams(location.hash.slice(1));
-    const authUserEncoded = hashParams.get('auth_user');
+    // Parse hash manually to avoid URLSearchParams treating %2B-decoded "+" as space.
+    let authUserEncoded = null;
+    location.hash.slice(1).split('&').forEach(pair => {
+        const eq = pair.indexOf('=');
+        if (eq > -1 && pair.slice(0, eq) === 'auth_user') {
+            authUserEncoded = decodeURIComponent(pair.slice(eq + 1));
+        }
+    });
     if (authUserEncoded) {
         try {
-            const user = JSON.parse(decodeURIComponent(atob(authUserEncoded)));
+            // Accept both base64url (-, _) and standard base64 (+, /)
+            const b64 = authUserEncoded.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((authUserEncoded.length % 4) || 4);
+            const user = JSON.parse(decodeURIComponent(atob(b64)));
             if (user && user.id) {
                 history.replaceState(null, '', location.pathname + location.search);
                 if (typeof authManager !== 'undefined' && authManager.initializeAuth) {
                     authManager.currentUser = user;
                     authManager.updateUI(true);
+                } else if (typeof updateAuthUI === 'function') {
+                    updateAuthUI();
                 }
                 return user;
             }

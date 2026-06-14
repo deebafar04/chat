@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
         email: session.user.email,
         image: session.user.image ?? null,
       };
-      // encodeURIComponent → pure ASCII → safe for btoa on the client side
+      // base64url avoids +, /, = characters so URLSearchParams.get() cannot
+      // corrupt the value by treating %2B-decoded "+" as a space character.
       const encoded = Buffer.from(
         encodeURIComponent(JSON.stringify(user))
-      ).toString("base64");
+      ).toString("base64url");
 
       const dest = new URL(redirect);
-      // encodeURIComponent prevents URLSearchParams from decoding + as space
-      dest.hash = `auth_user=${encodeURIComponent(encoded)}`;
+      dest.hash = `auth_user=${encoded}`;
       destination = dest.toString();
     }
   } catch (err) {

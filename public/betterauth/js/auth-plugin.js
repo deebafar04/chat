@@ -200,11 +200,22 @@
 
     // After OAuth redirect the relay encodes user info in the URL hash so we
     // never need a cross-origin get-session fetch (blocked in Chrome incognito).
-    var hashParams = new URLSearchParams(location.hash.slice(1));
-    var authUserEncoded = hashParams.get('auth_user');
+    // Parse hash manually — URLSearchParams would decode %2B to + then treat + as
+    // space, corrupting standard base64. Manual parsing + decodeURIComponent is safe.
+    var authUserEncoded = null;
+    var rawHash = location.hash.slice(1);
+    rawHash.split('&').forEach(function(pair) {
+      var eq = pair.indexOf('=');
+      if (eq > -1 && pair.slice(0, eq) === 'auth_user') {
+        authUserEncoded = decodeURIComponent(pair.slice(eq + 1));
+      }
+    });
     if (authUserEncoded) {
       try {
-        var user = JSON.parse(decodeURIComponent(atob(authUserEncoded)));
+        // Accept both base64url (relay v2: -, _) and standard base64 (relay v1: +, /)
+        var b64 = authUserEncoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        var user = JSON.parse(decodeURIComponent(atob(b64)));
         if (user && user.id) {
           history.replaceState(null, '', location.pathname + location.search);
           showUser(user, signInContainer, userInfoContainer);
