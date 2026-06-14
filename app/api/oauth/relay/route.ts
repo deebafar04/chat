@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { auth } from "@/betterauth/auth";
 
 // GET /api/oauth/relay?redirect=<original-page-url>
@@ -20,12 +19,7 @@ export async function GET(request: NextRequest) {
 
   let destination = redirect;
   try {
-    // Use next/headers (same path as server.ts getCurrentUser) rather than
-    // request.headers — BetterAuth reads cookies correctly from this source.
-    const reqHeaders = await headers();
-    console.log("[OAuth relay] cookie header present:", !!reqHeaders.get("cookie"));
-    const session = await auth.api.getSession({ headers: reqHeaders });
-    console.log("[OAuth relay] session found:", !!session?.user, session?.user?.email);
+ const session = await auth.api.getSession({ headers: request.headers });
     if (session?.user) {
       const user = {
         id: session.user.id,
@@ -45,14 +39,6 @@ export async function GET(request: NextRequest) {
     }
   } catch (err) {
     console.error("[OAuth relay] session read failed", err);
-  }
-
-  // Append relay_debug so we can confirm this relay was reached even if no session.
-  // Remove after debugging.
-  const finalUrl = new URL(destination);
-  if (!finalUrl.hash.includes("auth_user")) {
-    finalUrl.searchParams.set("relay_debug", "no_session");
-    destination = finalUrl.toString();
   }
 
   return NextResponse.redirect(destination);
