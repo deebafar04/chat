@@ -60,6 +60,26 @@ The auth API is served by the Next.js app at `/api/auth/**` (handled by
 OAuth provider buttons call `/api/oauth/:provider` which uses top-level navigation
 (not `fetch`) to avoid third-party cookie restrictions in incognito/Firefox.
 
+## First-time setup
+
+`BETTER_AUTH_SECRET` is required before any provider will work — without it the
+server won't start. Generate one:
+
+```
+openssl rand -base64 32
+```
+
+**Local:** add it to `docker/.env` as `BETTER_AUTH_SECRET=<value>`.
+
+**Vercel:** go to the project → **Settings → Environment Variables**, add
+`BETTER_AUTH_SECRET` with the generated value. Also set `BETTER_AUTH_BASE_URL`
+to your production URL (e.g. `https://api.model.earth`) and add each provider's
+`CLIENT_ID` / `CLIENT_SECRET` pair there. Vercel env vars override anything in
+`.env` at build/runtime.
+
+See [oauth-setup.md — Environment Variables](oauth-setup.md#env-vars) for the
+full variable list.
+
 ## Adding a provider
 
 1. Register the OAuth app and get credentials — see [oauth-setup.md](oauth-setup.md).
