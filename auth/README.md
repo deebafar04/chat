@@ -73,13 +73,16 @@ because `api_url_development` in `docker/webroot.yaml` always points to
 BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 ```
 
-**Vercel** (Settings → Environment Variables): set its own independent
-`BETTER_AUTH_SECRET` (generate a separate value). Also set:
+**Vercel** (Settings → [choose Production] → Environment Variables): set its own
+independent `BETTER_AUTH_SECRET` (generate a separate value). Also set:
 - `BETTER_AUTH_BASE_URL` → `https://modelearth.vercel.app`
 - each provider's `CLIENT_ID` / `CLIENT_SECRET` pair
 
 The two secrets do not need to match — local and Vercel are separate deployments
-with separate sessions.
+with separate sessions. Vercel cannot generate this value automatically: it only
+stores env vars and has no knowledge of what they mean. better-auth requires the
+secret to exist at startup and has no persistent store to save a generated value
+between serverless deployments.
 
 See [oauth-setup.md — Environment Variables](oauth-setup.md#env-vars) for the
 full variable list.
