@@ -29,7 +29,7 @@ function resolveTrustedOrigins(): string[] {
   if (process.env.ALLOWED_ORIGINS) {
     return process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
   }
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error("ALLOWED_ORIGINS is required in production");
   }
   // 3700 = node server; 8887/8888/8889 = static webroot servers whose pages load the auth modal

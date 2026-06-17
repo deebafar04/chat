@@ -374,6 +374,35 @@ DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET
 FACEBOOK_CLIENT_ID / FACEBOOK_CLIENT_SECRET
 ```
 
+### Setting env vars in Vercel
+
+Vercel's dashboard supports bulk paste: **Project → Settings → [choose Production] →
+Environment Variables → Add → paste multiple lines** in `KEY=VALUE` format (same
+as `.env`). This is the fastest way to populate secrets.
+
+However, several vars have **different values in production** vs the local
+`docker/.env`. The section at the bottom of `docker/.env` labelled
+`# Production Vercel` lists the overrides to paste — use those values instead of
+the localhost ones. Vars not listed there are environment-agnostic and can be
+pasted as-is.
+
+**Vars that must differ from local `.env`:**
+
+| Variable | Local value | Vercel (Production) value |
+|---|---|---|
+| `BETTER_AUTH_SECRET` | any strong random value | separately generated value |
+| `BETTER_AUTH_BASE_URL` | `http://localhost:3700` | `https://modelearth.vercel.app` |
+| `ALLOWED_ORIGINS` | localhost ports | `https://modelearth.vercel.app` |
+
+**Vars that are environment-agnostic** (paste the same value):
+OAuth `CLIENT_ID`/`CLIENT_SECRET` pairs, `NEXT_PUBLIC_SUPABASE_URL`,
+`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL`,
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `PINECONE_API_KEY`, `VOYAGE_API_KEY`,
+and other API keys.
+
+Vercel does not auto-rebuild when env vars change — trigger a new deployment
+after saving them.
+
 ---
 
 ## Deploying to Vercel — repo root vs `chat/` root
