@@ -23,7 +23,7 @@ import {
   stream,
   vote,
 } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 // NOTE: User management is now handled by Supabase Auth (auth.users table)
 // No getUser, createUser, or createGuestUser functions needed
@@ -41,7 +41,7 @@ export async function saveChat({
   visibility: VisibilityType;
 }) {
   try {
-    return await db.insert(chat).values({
+    return await getDb().insert(chat).values({
       id,
       createdAt: new Date(),
       user_id: userId,
@@ -59,9 +59,9 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
-    await db.delete(message).where(eq(message.chatId, id));
-    await db.delete(stream).where(eq(stream.chatId, id));
+    await getDb().delete(vote).where(eq(vote.chatId, id));
+    await getDb().delete(message).where(eq(message.chatId, id));
+    await getDb().delete(stream).where(eq(stream.chatId, id));
 
     const [chatsDeleted] = await db
       .delete(chat)
@@ -89,9 +89,9 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
 
     const chatIds = userChats.map((c) => c.id);
 
-    await db.delete(vote).where(inArray(vote.chatId, chatIds));
-    await db.delete(message).where(inArray(message.chatId, chatIds));
-    await db.delete(stream).where(inArray(stream.chatId, chatIds));
+    await getDb().delete(vote).where(inArray(vote.chatId, chatIds));
+    await getDb().delete(message).where(inArray(message.chatId, chatIds));
+    await getDb().delete(stream).where(inArray(stream.chatId, chatIds));
 
     const deletedChats = await db
       .delete(chat)
@@ -194,7 +194,7 @@ export async function getChatById({
   id: string;
 }): Promise<Chat | null> {
   try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+    const [selectedChat] = await getDb().select().from(chat).where(eq(chat.id, id));
     if (!selectedChat) {
       return null;
     }
@@ -207,7 +207,7 @@ export async function getChatById({
 
 export async function saveMessages({ messages }: { messages: DBMessage[] }) {
   try {
-    return await db.insert(message).values(messages);
+    return await getDb().insert(message).values(messages);
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to save messages");
   }
@@ -254,7 +254,7 @@ export async function voteMessage({
         .set({ isUpvoted: type === "up" })
         .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
     }
-    return await db.insert(vote).values({
+    return await getDb().insert(vote).values({
       chatId,
       messageId,
       isUpvoted: type === "up",
@@ -266,7 +266,7 @@ export async function voteMessage({
 
 export async function getVotesByChatId({ id }: { id: string }) {
   try {
-    return await db.select().from(vote).where(eq(vote.chatId, id));
+    return await getDb().select().from(vote).where(eq(vote.chatId, id));
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",
@@ -277,7 +277,7 @@ export async function getVotesByChatId({ id }: { id: string }) {
 
 export async function getMessageById({ id }: { id: string }) {
   try {
-    return await db.select().from(message).where(eq(message.id, id));
+    return await getDb().select().from(message).where(eq(message.id, id));
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",
@@ -334,7 +334,7 @@ export async function updateChatVisiblityById({
   visibility: "private" | "public";
 }) {
   try {
-    return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
+    return await getDb().update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",

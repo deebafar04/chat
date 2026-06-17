@@ -4,7 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { ChatSDKError } from "../../errors";
 import { type AdminConfig, adminConfig } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 export async function getAdminConfig({
   configKey,

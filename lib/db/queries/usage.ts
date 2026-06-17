@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, count, desc, eq, gte, lt } from "drizzle-orm";
 import { ChatSDKError } from "../../errors";
 import { rateLimitTracking, usageLogs } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 // =====================================================
 // USAGE LOGS QUERIES

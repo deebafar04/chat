@@ -17,3 +17,8 @@ const client = isDbConfigured
   : null;
 
 export const db = client ? drizzle(client) : null;
+
+export function getDb() {
+  if (!db) throw new Error("Database not configured — set POSTGRES_URL (locally: docker/.env, production: Vercel env vars)");
+  return db;
+}

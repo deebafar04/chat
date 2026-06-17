@@ -4,7 +4,7 @@ import { and, asc, desc, eq, gt, max } from "drizzle-orm";
 import type { ArtifactKind } from "@/components/artifact";
 import { ChatSDKError } from "../../errors";
 import { document, type Suggestion, suggestion } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 export async function saveDocument({
   id,
@@ -242,7 +242,7 @@ export async function saveSuggestions({
   suggestions: Suggestion[];
 }) {
   try {
-    return await db.insert(suggestion).values(suggestions);
+    return await getDb().insert(suggestion).values(suggestions);
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",

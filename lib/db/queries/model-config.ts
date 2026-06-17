@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { ChatSDKError } from "../../errors";
 import type { ModelConfig as DBModelConfig } from "../drizzle-schema";
 import { modelConfig } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 // Type for model configuration (matches database schema)
 export type ModelConfig = {

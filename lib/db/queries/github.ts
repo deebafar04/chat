@@ -3,7 +3,7 @@ import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { ChatSDKError } from "../../errors";
 import { type GithubRepository, githubRepositories } from "../drizzle-schema";
-import { db } from "./base";
+import { getDb } from "./base";
 
 export async function getGithubRepositoriesByUserId({
   userId,
