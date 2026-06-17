@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   let destination = redirect;
   try {
- const session = await auth.api.getSession({ headers: request.headers });
+    const session = auth ? await auth.api.getSession({ headers: request.headers }) : null;
     if (session?.user) {
       const user = {
         id: session.user.id,

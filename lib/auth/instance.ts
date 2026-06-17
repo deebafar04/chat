@@ -36,7 +36,9 @@ function resolveTrustedOrigins(): string[] {
   return ["http://localhost:3700", "http://localhost:8887", "http://localhost:8888", "http://localhost:8889"];
 }
 
-export const auth = betterAuth({
+function createAuth() {
+  try {
+    return betterAuth({
   basePath: "/api/auth",
   baseURL: resolveBaseURL(),
   secret: requireSecret(),
@@ -119,3 +121,12 @@ export const auth = betterAuth({
     },
   },
 });
+  } catch (e) {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      console.error('[auth] betterAuth initialization failed:', e);
+    }
+    return null;
+  }
+}
+
+export const auth = createAuth();

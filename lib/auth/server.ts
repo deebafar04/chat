@@ -19,6 +19,7 @@ export async function isAuthRequired(reqHeaders?: Headers): Promise<boolean> {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
+    if (!auth) return null;
     const session = await auth.api.getSession({ headers: await headers() });
     return session?.user ? (session.user as unknown as User) : null;
   } catch {
@@ -28,6 +29,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 export async function getSession(): Promise<Session | null> {
   try {
+    if (!auth) return null;
     const sessionData = await auth.api.getSession({ headers: await headers() });
     return sessionData?.session ? (sessionData.session as unknown as Session) : null;
   } catch {
