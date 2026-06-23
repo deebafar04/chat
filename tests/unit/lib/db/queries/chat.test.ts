@@ -11,16 +11,18 @@ import { ChatSDKError } from "@/lib/errors";
 vi.mock("server-only", () => ({}));
 
 // Mock the database
-vi.mock("@/lib/db/queries/base", () => ({
-  db: {
+vi.mock("@/lib/db/queries/base", () => {
+  const mockDb = {
     insert: vi.fn(),
     select: vi.fn(),
     delete: vi.fn(),
     update: vi.fn(),
-  },
-}));
+  };
+  return { db: mockDb, getDb: () => mockDb, isDbConfigured: true };
+});
 
-import { db } from "@/lib/db/queries/base";
+import { db as _db } from "@/lib/db/queries/base";
+const db = _db!;
 // Import after mocking
 import {
   deleteChatById,
