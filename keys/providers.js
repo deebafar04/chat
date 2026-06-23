@@ -225,6 +225,15 @@ const _providers = [
     tokenOnly: true,
     models: [],
   },
+  {
+    id: 'supabase',
+    name: 'Supabase',
+    keyPlaceholder: 'https://xxxx.supabase.co',
+    keyHint: 'Supabase project URL — enables chat history and email/password login (NEXT_PUBLIC_SUPABASE_URL)',
+    getKeyUrl: 'https://supabase.com/dashboard',
+    tokenOnly: true,
+    models: [],
+  },
 ];
 
 // Browser global (loaded via <script> tag)

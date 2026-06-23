@@ -8,17 +8,19 @@ import * as adminQueries from "@/lib/db/queries/admin";
 import { ChatSDKError } from "@/lib/errors";
 
 // Mock the database module
-vi.mock("@/lib/db/queries/base", () => ({
-  db: {
+vi.mock("@/lib/db/queries/base", () => {
+  const mockDb = {
     select: vi.fn(),
     update: vi.fn(),
     insert: vi.fn(),
     delete: vi.fn(),
-  },
-}));
+  };
+  return { db: mockDb, getDb: () => mockDb, isDbConfigured: true };
+});
 
 // Import the mocked db
-import { db } from "@/lib/db/queries/base";
+import { db as _db } from "@/lib/db/queries/base";
+const db = _db!;
 
 describe("Admin Config Queries", () => {
   beforeEach(() => {

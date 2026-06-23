@@ -322,6 +322,7 @@
     GITHUB_PERSONAL_ACCESS_TOKEN:  'github',
     PINECONE_API_KEY:              'pinecone',
     VOYAGE_API_KEY:                'voyage',
+    NEXT_PUBLIC_SUPABASE_URL:      'supabase',
   };
 
   var PROVIDER_TO_ENV = {
@@ -339,6 +340,7 @@
     github:     'GITHUB_PERSONAL_ACCESS_TOKEN',
     pinecone:   'PINECONE_API_KEY',
     voyage:     'VOYAGE_API_KEY',
+    supabase:   'NEXT_PUBLIC_SUPABASE_URL',
   };
 
   var COPY_PREF_KEY = 'settings_copymykeys';

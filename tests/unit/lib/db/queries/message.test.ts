@@ -14,16 +14,18 @@ import type { DBMessage } from "@/lib/db/drizzle-schema";
 vi.mock("server-only", () => ({}));
 
 // Mock the entire database base module with factory function
-vi.mock("@/lib/db/queries/base", () => ({
-  db: {
+vi.mock("@/lib/db/queries/base", () => {
+  const mockDb = {
     insert: vi.fn(),
     select: vi.fn(),
     delete: vi.fn(),
     update: vi.fn(),
-  },
-}));
+  };
+  return { db: mockDb, getDb: () => mockDb, isDbConfigured: true };
+});
 
-import { db } from "@/lib/db/queries/base";
+import { db as _db } from "@/lib/db/queries/base";
+const db = _db!;
 // Import after mocks are set up
 import {
   deleteMessagesByChatIdAfterTimestamp,
