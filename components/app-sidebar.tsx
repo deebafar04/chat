@@ -78,6 +78,8 @@ const VISIBILITY_OPTIONS: Array<{
   },
 ];
 
+const CODECHAT_REPO_NAMES = ["team", "codechat", "localsite", "chat", "realitystream", "data-pipeline"];
+
 const TABS = [
   { id: "sources" as ActiveTab, icon: <Library size={16} />, label: "Sources", description: "Choose local and GitHub code sources." },
   { id: "chats" as ActiveTab, icon: <MessageSquare size={16} />, label: "Chats", description: "Browse history and start a new chat." },
@@ -109,7 +111,7 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
     "rag-disabled",
     true
   );
-  const [showGithubSources, setShowGithubSources] = useState(false);
+  const [sourceMode, setSourceMode] = useState<"codechat" | "not_optimized" | "anyone">("codechat");
   const [githubSelectedRepos, setGithubSelectedRepos] = useState<GitHubRepo[]>([]);
   const [sidebarWidth, setSidebarWidth] = useLocalStorage("sidebar-width", 256);
 
@@ -132,8 +134,12 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
     []
   );
 
+  const displayedRepos = sourceMode === "not_optimized"
+    ? availableRepos.filter((r) => !CODECHAT_REPO_NAMES.includes(r.name))
+    : availableRepos.filter((r) => CODECHAT_REPO_NAMES.includes(r.name));
+
   const allSelected = !noneSelected && ragSelectedRepos.length === 0;
-  const repoCount = noneSelected ? 0 : (allSelected ? availableRepos.length : ragSelectedRepos.length);
+  const repoCount = noneSelected ? 0 : (allSelected ? displayedRepos.length : ragSelectedRepos.length);
 
   const isChecked = (repo: Repo) =>
     !noneSelected && (allSelected || ragSelectedRepos.includes(repo.name));
@@ -141,7 +147,7 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
   const handleToggleRepo = (repo: Repo) => {
   if (allSelected) {
     setNoneSelected(false);
-    const next = availableRepos.filter((r) => r.name !== repo.name).map((r) => r.name);
+    const next = displayedRepos.filter((r) => r.name !== repo.name).map((r) => r.name);
     setRagSelectedRepos(next);
   } else {
     const already = ragSelectedRepos.includes(repo.name);
@@ -156,7 +162,7 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
     } else {
       setNoneSelected(false);
       const next = [...ragSelectedRepos, repo.name];
-      setRagSelectedRepos(next.length === availableRepos.length ? [] : next);
+      setRagSelectedRepos(next.length === displayedRepos.length ? [] : next);
     }
   }
 };
@@ -173,7 +179,7 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
     const handler = () => {
       setOpen(true);
       setActiveTab("sources");
-      setShowGithubSources(true);
+      setSourceMode("anyone");
     };
     window.addEventListener("open-github-sources", handler);
     return () => window.removeEventListener("open-github-sources", handler);
@@ -306,7 +312,11 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
             <div className="flex h-full flex-col overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border">
                 <span className="text-sm font-semibold">
-                  {showGithubSources ? "Sources (Anyone's Repo)" : "Sources (CodeChat)"}
+                  {sourceMode === "anyone"
+                    ? "Anyone's Repos"
+                    : sourceMode === "not_optimized"
+                      ? "Sources (Not Optimized)"
+                      : "Sources (CodeChat)"}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -319,23 +329,29 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem
-                      onClick={() => { setBroadened(false); setShowGithubSources(false); }}
-                      className={!showGithubSources ? "font-medium" : ""}
+                      onClick={() => { setBroadened(false); setSourceMode("codechat"); }}
+                      className={sourceMode === "codechat" ? "font-medium" : ""}
                     >
-                      {!showGithubSources ? "✓ " : "\u00a0\u00a0 "}CodeChat Repos
+                      {sourceMode === "codechat" ? "✓ " : "\u00a0\u00a0 "}Sources (CodeChat)
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => setShowGithubSources(true)}
-                      className={showGithubSources ? "font-medium" : ""}
+                      onClick={() => setSourceMode("not_optimized")}
+                      className={sourceMode === "not_optimized" ? "font-medium" : ""}
                     >
-                      {showGithubSources ? "✓ " : "\u00a0\u00a0 "}Anyone's Repo
+                      {sourceMode === "not_optimized" ? "✓ " : "\u00a0\u00a0 "}Sources (Not Optimized)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setSourceMode("anyone")}
+                      className={sourceMode === "anyone" ? "font-medium" : ""}
+                    >
+                      {sourceMode === "anyone" ? "✓ " : "   "}Anyone's Repos
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
               {/* CodeChat RAG repos view */}
-              {!showGithubSources && (
+              {sourceMode !== "anyone" && (
                 <>
                   {/* Loading spinner — shown before repos arrive */}
                   {reposLoading && (
@@ -389,12 +405,12 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
 
                   {/* Repo list */}
                   <div className="flex-1 overflow-y-auto py-1">
-                    {availableRepos.length === 0 ? (
+                    {displayedRepos.length === 0 ? (
                       <p className="px-3 py-4 text-center text-xs text-muted-foreground">
                         No repos configured.
                       </p>
                     ) : (
-                      availableRepos.map((repo) => (
+                      displayedRepos.map((repo) => (
                         <div
                           key={repo.name}
                           className="mx-1 flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
@@ -429,7 +445,7 @@ export function AppSidebar({ isWebroot = false }: { isWebroot?: boolean }) {
               )}
 
               {/* Anyone's Repo – GitHub context integration */}
-              {showGithubSources && (
+              {sourceMode === "anyone" && (
                 <div className="flex-1 overflow-y-auto">
                   <GitHubContextIntegration
                     githubPAT={githubPAT}

@@ -2,6 +2,8 @@
  * Core types for the database-driven chat agent system
  */
 
+import type { RagSource } from "@/lib/ai/rag-context-builder";
+
 // Legacy types for backward compatibility
 export type TokenUsage = {
   promptTokens: number;
@@ -204,6 +206,7 @@ export type ChatParams = {
       | "unauthorized"
       | "error";
     sourceCount?: number;
+    sources?: Array<RagSource>;
   };
   timingData?: {
     t0: number;
