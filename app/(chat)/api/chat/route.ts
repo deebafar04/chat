@@ -420,6 +420,7 @@ export async function POST(request: Request) {
       ragStatus: {
         skippedReason: ragContextResult.skippedReason,
         sourceCount: ragContextResult.sourceCount,
+        sources: ragContextResult.sources,
       },
       timingData: {
         t0,

@@ -23,6 +23,7 @@ import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import { useRepos } from "@/hooks/use-repos";
 import type { Vote } from "@/lib/db/drizzle-schema";
+import type { RagSource } from "@/lib/ai/rag-context-builder";
 import { ChatSDKError } from "@/lib/errors";
 import { storage } from "@/lib/storage";
 import type { Attachment, ChatMessage } from "@/lib/types";
@@ -32,6 +33,7 @@ import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { RagSourcesPanel } from "./rag-sources-panel";
 import { RagTimingPanel } from "./rag-timing-panel";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "sonner";
@@ -67,6 +69,7 @@ export function Chat({
   const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
   const [ragSkippedReason, setRagSkippedReason] = useState<string | null>(null);
+  const [ragSources, setRagSources] = useState<RagSource[]>([]);
   const [timingData, setTimingData] = useState<{
     ragStartMs?: number;
     ragEndMs?: number;
@@ -198,9 +201,12 @@ export function Chat({
         setUsage(dataPart.data);
       }
       if (dataPart.type === "data-rag-status") {
-        const reason = (dataPart.data as { skippedReason?: string } | null)
-          ?.skippedReason ?? null;
-        setRagSkippedReason(reason);
+        const data = dataPart.data as {
+          skippedReason?: string;
+          sources?: RagSource[];
+        } | null;
+        setRagSkippedReason(data?.skippedReason ?? null);
+        setRagSources(data?.sources ?? []);
       }
       if (dataPart.type === "data-timing") {
         setTimingData(
@@ -544,6 +550,10 @@ export function Chat({
               to populate it with your repo vectors.
             </div>
           </div>
+        )}
+
+        {ragSources.length > 0 && (
+          <RagSourcesPanel ragSources={ragSources} />
         )}
 
         {timingData && <RagTimingPanel timing={timingData} />}
